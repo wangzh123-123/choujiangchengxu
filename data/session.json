@@ -1,0 +1,8 @@
+{
+  "currentPrizeId": null,
+  "publicScreen": "prize",
+  "controlBarVisible": true,
+  "drawPhase": "idle",
+  "lastWinnerParticipantId": null,
+  "lastWinnerPrizeId": null
+}

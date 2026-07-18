@@ -1,0 +1,45 @@
+# .spec-superflow.yaml — lightweight state machine
+# Derived data. Always rebuildable from artifacts. Lost/corrupt → fall back to content-level detection.
+
+# === Core state ===
+state: executing
+workflow: auto
+revision: 2
+
+# === Hashes (fast staleness detection) ===
+artifacts_hash: sha256:635bd1247e0a876c04c519f6ff1ac3d858e576bed280157e6d3579226316193c
+contract_hash: sha256:f545377d19323a4903f262d640306d6c5f45eb5aed13bc48776d0bcff82ba7b6
+
+# === Execution progress ===
+execution_mode: sdd
+execution_plan_hash: sha256:86ec064d4f36cb60198a3c389fa7614c53ce9d9810c33c6375b2f238b4c53abb
+execution_plan_revision: 2
+batches_completed: 2
+test_result: null
+spec_merged: false
+
+# === Metadata ===
+change_name: lottery-display-app
+last_transition: 2026-07-18T10:31:55.566Z
+last_transition_from: approved-for-build
+last_transition_to: executing
+
+# === Decision points ===
+dp_0_decisions: lottery-display-app: local configurable lottery display with 4 public screens (prize/qr-fake/scroll-draw/winner) + private preset-winner admin; UX enhancements in-scope; ask-per-decision; no tech preference
+dp_0_result: confirmed
+dp_0_confirmed: true
+dp_0_timestamp: 2026-07-18T10:16:27Z
+dp_1_result: confirmed: multi-prize lottery display app; Vite+React+Express+JSON; 4 public screens + password admin hard-preset; no-repeat winners; light motion; host control bar; one change
+dp_1_timestamp: 2026-07-18T10:22:39Z
+dp_2_result: approved: proposal+5specs+design+12batches tasks for lottery-display-app
+dp_2_timestamp: 2026-07-18T10:28:31Z
+dp_3_result: approved: 4 waves serial; hard-preset draw; admin passphrase; no unmapped requirements
+dp_3_timestamp: 2026-07-18T10:30:17Z
+dp_4_result: sdd: plan revision 2; user-confirmed-revision; tasks.md progress checkboxes updated after W1; refresh plan hashes
+dp_4_timestamp: 2026-07-18T10:37:42.422Z
+dp_5_result: null
+dp_5_timestamp: null
+dp_6_result: null
+dp_6_timestamp: null
+dp_7_result: null
+dp_7_timestamp: null

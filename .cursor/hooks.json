@@ -1,0 +1,8 @@
+{
+  "hooks": [
+    {
+      "event": "sessionStart",
+      "command": "bash D:\\Cursor\\武侠demo\\.cursor\\spec-superflow\\hooks\\session-start"
+    }
+  ]
+}
