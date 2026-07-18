@@ -1,5 +1,5 @@
 {
-  "currentPrizeId": null,
+  "currentPrizeId": "prize-3",
   "publicScreen": "prize",
   "controlBarVisible": true,
   "drawPhase": "idle",

@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "prize-1",
+    "name": "一等奖（示例）",
+    "imagePath": "prize-default.svg",
+    "order": 0
+  },
+  {
+    "id": "prize-2",
+    "name": "二等奖（示例）",
+    "imagePath": "prize-default.svg",
+    "order": 1
+  },
+  {
+    "id": "prize-3",
+    "name": "三等奖（示例）",
+    "imagePath": "prize-default.svg",
+    "order": 2
+  }
+]
