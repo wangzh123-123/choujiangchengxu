@@ -3,8 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "npm run dev --prefix server",
-    "test": "npm run test --prefix server",
-    "test:server": "npm run test --prefix server"
+    "dev": "npm run dev --prefix server & npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "test": "npm run test --prefix server && npm run test --prefix client",
+    "test:server": "npm run test --prefix server",
+    "test:client": "npm run test --prefix client"
   }
 }
