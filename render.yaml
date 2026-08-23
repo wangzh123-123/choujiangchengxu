@@ -2,7 +2,7 @@ services:
   - type: web
     name: lottery-display
     runtime: node
-    buildCommand: npm install --prefix client && npm run build --prefix client && npm install --prefix server
+    buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --include=dev
     startCommand: npm run start --prefix server
     envVars:
       - key: NODE_ENV
