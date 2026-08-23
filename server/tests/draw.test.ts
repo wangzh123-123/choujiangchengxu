@@ -20,7 +20,7 @@ describe("resolveWinner", () => {
     expect(
       resolveWinner({
         presetId: "u1",
-        eligibleIds: ["u1", "u2"],
+        eligibleIds: ["u2"],
         random: () => 0.9,
       }),
     ).toBe("u1");

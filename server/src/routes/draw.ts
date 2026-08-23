@@ -27,28 +27,38 @@ export function drawRouter(stores: AppStores): Router {
       return;
     }
     const participants = await stores.participants.read();
-    const eligible = listEligible(participants, winners);
-    if (eligible.length === 0) {
-      res.status(400).json({ message: "没有可抽奖用户" });
-      return;
-    }
     const presets = await stores.presets.read();
     const presetId = presets[prizeId] ?? null;
+    const eligible = listEligible(participants, winners);
+
     let winnerId: string;
-    try {
+    if (presetId) {
+      // Preset has highest priority: ignore repeat-winner eligibility.
       winnerId = resolveWinner({
         presetId,
         eligibleIds: eligible.map((e) => e.id),
-        random: () => randomInt(0, 1_000_000) / 1_000_000,
+        random: () => 0,
       });
-    } catch (err) {
-      const code = err instanceof Error ? err.message : "DRAW_FAILED";
-      res.status(400).json({ message: code === "PRESET_NOT_ELIGIBLE" ? "内定用户不可抽" : "开奖失败" });
-      return;
+    } else {
+      if (eligible.length === 0) {
+        res.status(400).json({ message: "没有可抽奖用户" });
+        return;
+      }
+      try {
+        winnerId = resolveWinner({
+          presetId: null,
+          eligibleIds: eligible.map((e) => e.id),
+          random: () => randomInt(0, 1_000_000) / 1_000_000,
+        });
+      } catch {
+        res.status(400).json({ message: "开奖失败" });
+        return;
+      }
     }
-    const winner = eligible.find((e) => e.id === winnerId);
+
+    const winner = participants.find((e) => e.id === winnerId);
     if (!winner) {
-      res.status(500).json({ message: "开奖结果异常" });
+      res.status(400).json({ message: "开奖失败" });
       return;
     }
     const record: WinnerRecord = {
@@ -58,8 +68,9 @@ export function drawRouter(stores: AppStores): Router {
     };
     winners.push(record);
     await stores.winners.write(winners);
+    // Keep publicScreen on draw so the client can play the rolling animation first.
     session.drawPhase = "revealed";
-    session.publicScreen = "winner";
+    session.publicScreen = "draw";
     session.lastWinnerParticipantId = winner.id;
     session.lastWinnerPrizeId = prizeId;
     await stores.session.write(session);

@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "prizeId": "prize-1",
+    "participantId": "c",
+    "at": "2026-07-18T11:40:19.396Z"
+  },
+  {
+    "prizeId": "prize-2",
+    "participantId": "c",
+    "at": "2026-07-18T11:45:45.323Z"
+  },
+  {
+    "prizeId": "prize-1784374806279",
+    "participantId": "d",
+    "at": "2026-07-18T11:45:51.986Z"
+  }
+]

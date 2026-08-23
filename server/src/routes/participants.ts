@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requireAdmin } from "../auth/adminAuth.js";
 import type { AppStores } from "../store/appStores.js";
 import type { Participant } from "../types.js";
 
@@ -29,6 +30,13 @@ export function participantsRouter(stores: AppStores): Router {
     list.push(next);
     await stores.participants.write(list);
     res.status(201).json(next);
+  });
+
+  router.delete("/api/participants", requireAdmin, async (_req, res) => {
+    await stores.participants.write([]);
+    // Presets reference participants; clear them together.
+    await stores.presets.write({});
+    res.status(204).end();
   });
 
   return router;

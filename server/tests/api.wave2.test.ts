@@ -91,11 +91,16 @@ describe("Wave2 APIs", () => {
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
     expect(draw.body.participantId).toBe("u1");
+    // Preset has highest priority: same person may be preset/drawn again.
     const preset = await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
       .send({ participantId: "u1" });
-    expect(preset.status).toBe(400);
+    expect(preset.status).toBe(200);
+    await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
+    const draw2 = await request(app).post("/api/draw");
+    expect(draw2.status).toBe(200);
+    expect(draw2.body.participantId).toBe("u1");
   });
 
   it("rejects draw with empty eligible", async () => {
@@ -133,9 +138,43 @@ describe("Wave2 APIs", () => {
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
       .send({ participantId: "u2" });
+    await request(app).patch("/api/session").send({ publicScreen: "draw" });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
     expect(draw.body.participantId).toBe("u2");
     expect(draw.body.name).toBe("乙");
+    const session = await request(app).get("/api/session");
+    expect(session.body.publicScreen).toBe("draw");
+    expect(session.body.lastWinnerParticipantId).toBe("u2");
+  });
+
+  it("clears participants and winners with admin auth", async () => {
+    const token = await login();
+    await request(app).post("/api/participants").send({ id: "u1", name: "甲" });
+    await request(app)
+      .put("/api/prizes")
+      .set("Authorization", `Bearer ${token}`)
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+    await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
+    await request(app)
+      .put("/api/presets/p1")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ participantId: "u1" });
+    await request(app).post("/api/draw");
+
+    const clearWinners = await request(app)
+      .delete("/api/winners")
+      .set("Authorization", `Bearer ${token}`);
+    expect(clearWinners.status).toBe(204);
+    expect((await request(app).get("/api/winners")).body).toEqual([]);
+
+    const clearPeople = await request(app)
+      .delete("/api/participants")
+      .set("Authorization", `Bearer ${token}`);
+    expect(clearPeople.status).toBe(204);
+    expect((await request(app).get("/api/participants")).body).toEqual([]);
+    expect(
+      (await request(app).get("/api/presets").set("Authorization", `Bearer ${token}`)).body,
+    ).toEqual({});
   });
 });

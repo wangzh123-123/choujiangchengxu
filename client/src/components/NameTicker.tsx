@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCycle, pickSettleIndex } from "./tickerMath";
 
 type Props = {
@@ -8,41 +8,50 @@ type Props = {
   onSettled?: () => void;
 };
 
+const ROLL_MS = 2800;
+
 export function NameTicker({ names, rolling, settleName, onSettled }: Props) {
   const cycle = useMemo(() => buildCycle(names), [names]);
   const [offset, setOffset] = useState(0);
   const [settled, setSettled] = useState(false);
+  const onSettledRef = useRef(onSettled);
+  onSettledRef.current = onSettled;
+  const settledOnceRef = useRef(false);
 
   useEffect(() => {
     if (!rolling || cycle.length === 0) {
       return;
     }
+    settledOnceRef.current = false;
     setSettled(false);
-    let currentSpeed = 16;
-    const accel = window.setTimeout(() => {
-      currentSpeed = 5;
-    }, 800);
-    const settleTimer = window.setTimeout(() => {
-      if (settleName) {
-        const idx = pickSettleIndex(cycle, settleName);
-        setOffset(idx);
-        setSettled(true);
-        onSettled?.();
-      }
-    }, 2600);
+
     const tick = window.setInterval(() => {
       setOffset((v) => (v + 1) % cycle.length);
-    }, currentSpeed * 10);
-    const speedSync = window.setInterval(() => {
-      window.clearInterval(tick);
-    }, 850);
+    }, 80);
+
     return () => {
-      window.clearTimeout(accel);
-      window.clearTimeout(settleTimer);
       window.clearInterval(tick);
-      window.clearInterval(speedSync);
     };
-  }, [rolling, cycle, settleName, onSettled]);
+  }, [rolling, cycle]);
+
+  useEffect(() => {
+    if (!rolling || !settleName || cycle.length === 0 || settledOnceRef.current) {
+      return;
+    }
+    const settleTimer = window.setTimeout(() => {
+      if (settledOnceRef.current) {
+        return;
+      }
+      settledOnceRef.current = true;
+      const idx = pickSettleIndex(cycle, settleName);
+      setOffset(idx);
+      setSettled(true);
+      onSettledRef.current?.();
+    }, ROLL_MS);
+    return () => {
+      window.clearTimeout(settleTimer);
+    };
+  }, [rolling, settleName, cycle]);
 
   if (cycle.length === 0) {
     return <div className="ticker empty">暂无参与用户</div>;

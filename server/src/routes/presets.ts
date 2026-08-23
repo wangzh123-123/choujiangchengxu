@@ -28,11 +28,6 @@ export function presetsRouter(stores: AppStores): Router {
       res.status(404).json({ message: "用户不存在" });
       return;
     }
-    const winners = await stores.winners.read();
-    if (winners.some((w) => w.participantId === participantId)) {
-      res.status(400).json({ message: "该用户已中奖，不能再被内定" });
-      return;
-    }
     const presets = await stores.presets.read();
     presets[prizeId] = participantId;
     await stores.presets.write(presets);

@@ -2,7 +2,7 @@
 
 本地可运行的抽奖展示系统：对外四屏 + 内部管理（硬内定）。
 
-## 启动
+## 启动（开发）
 
 需要 Node.js。在两个终端分别执行：
 
@@ -16,6 +16,37 @@ npm run dev --prefix client
 - API 健康检查：http://127.0.0.1:3001/api/health
 
 默认管理口令：`admin123`（见 `data/config.json`）
+
+## 生产模式（本地单进程）
+
+构建前端并由 Express 同时提供页面与 API：
+
+```bash
+npm run build
+# Windows PowerShell:
+$env:NODE_ENV="production"; npm run start
+# Linux / macOS / Render:
+# NODE_ENV=production npm run start
+```
+
+- 访问：http://127.0.0.1:3001/（大屏）、http://127.0.0.1:3001/admin
+
+## 部署到 Render（免费公网）
+
+适合远程测试与短期活动（如十月使用后下线）。
+
+1. 将仓库连接到 [Render](https://render.com)，使用根目录 `render.yaml`（Blueprint）或手动创建 Web Service。
+2. 在 Render Dashboard 设置环境变量 **`ADMIN_PASSPHRASE`**（强口令，勿用 `admin123`）。
+3. 部署完成后使用 Render 提供的 `https://xxx.onrender.com` 访问大屏与 `/admin`。
+
+**数据持久说明：**
+
+- 参与者、内定、中奖记录保存在容器内 `data/*.json`；**关闭浏览器不影响数据**。
+- 免费档约 15 分钟无访问后会休眠，再次打开可能有冷启动延迟；活动前可访问一次预热。
+- **重新部署（Redeploy）会清空磁盘数据**；十月活动期间请避免 Redeploy。活动前可备份 `data/` 目录。
+
+**十月后：** 在 Render 删除该 Web Service 即可。
+
 
 ## 默认奖品
 

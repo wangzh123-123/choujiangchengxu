@@ -1,6 +1,6 @@
 import type { PublicScreen } from "../api/types";
 
-type PrizeOption = { id: string; name: string };
+type PrizeOption = { id: string; name: string; drawn: boolean };
 
 type Props = {
   visible: boolean;
@@ -42,6 +42,7 @@ export function HostControlBar({
   }
 
   const idx = order.indexOf(screen);
+  const currentDrawn = prizes.some((p) => p.id === currentPrizeId && p.drawn);
 
   return (
     <div className="host-bar">
@@ -70,12 +71,17 @@ export function HostControlBar({
         <option value="">选择奖品</option>
         {prizes.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.name}
+            {p.drawn ? `${p.name}（已抽）` : p.name}
           </option>
         ))}
       </select>
-      <button type="button" className="primary" disabled={drawing} onClick={onDraw}>
-        {drawing ? "抽奖中…" : "开始抽奖"}
+      <button
+        type="button"
+        className="primary"
+        disabled={drawing || currentDrawn || !currentPrizeId}
+        onClick={onDraw}
+      >
+        {drawing ? "抽奖中…" : currentDrawn ? "已抽取" : "开始抽奖"}
       </button>
       <button type="button" onClick={onToggleVisible}>
         隐藏

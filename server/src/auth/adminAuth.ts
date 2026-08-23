@@ -11,6 +11,10 @@ export function createToken(): string {
 }
 
 export async function verifyPassphrase(passphrase: string): Promise<boolean> {
+  const fromEnv = process.env.ADMIN_PASSPHRASE;
+  if (fromEnv) {
+    return passphrase === fromEnv;
+  }
   const store = new JsonStore<AppConfig>(getPaths().config, { adminPassphrase: "admin123" });
   const cfg = await store.read();
   return passphrase === cfg.adminPassphrase;

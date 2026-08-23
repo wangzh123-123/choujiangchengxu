@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "base": "671a66a0d01fd20a59f67f12fed4c1607c9a8104",
+  "head": "f18befc3aa2b345d994946ed95ff9432fd272b71",
+  "report": ".superpowers\\sdd\\reviews\\w4-admin-closeout.md",
+  "plan_hash": "sha256:86ec064d4f36cb60198a3c389fa7614c53ce9d9810c33c6375b2f238b4c53abb",
+  "plan_revision": 2,
+  "recorded_at": "2026-07-18T11:11:43.623Z"
+}

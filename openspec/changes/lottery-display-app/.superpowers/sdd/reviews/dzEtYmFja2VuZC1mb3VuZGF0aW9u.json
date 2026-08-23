@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "base": "27fcdba60f6c87ea79bf19e3f0f5e83d1a291040",
+  "head": "27fcdba60f6c87ea79bf19e3f0f5e83d1a291040",
+  "report": ".superpowers\\sdd\\reviews\\w1-backend-foundation.md",
+  "plan_hash": "sha256:86ec064d4f36cb60198a3c389fa7614c53ce9d9810c33c6375b2f238b4c53abb",
+  "plan_revision": 2,
+  "recorded_at": "2026-07-18T10:58:23.364Z"
+}

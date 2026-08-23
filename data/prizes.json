@@ -16,5 +16,23 @@
     "name": "三等奖（示例）",
     "imagePath": "prize-default.svg",
     "order": 2
+  },
+  {
+    "id": "prize-1784373676791",
+    "name": "参与奖",
+    "imagePath": "prize-default.svg",
+    "order": 3
+  },
+  {
+    "id": "prize-1784373691582",
+    "name": "第四个奖品",
+    "imagePath": "prize-default.svg",
+    "order": 4
+  },
+  {
+    "id": "prize-1784374806279",
+    "name": "新奖品",
+    "imagePath": "prize-default.svg",
+    "order": 5
   }
 ]

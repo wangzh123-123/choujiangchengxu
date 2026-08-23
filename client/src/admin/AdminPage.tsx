@@ -95,6 +95,36 @@ export function AdminPage() {
     }
   }
 
+  async function clearParticipants() {
+    if (!window.confirm("确认清空全部参与用户？内定设置也会一并清除。")) {
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    try {
+      await authFetch("/api/participants", { method: "DELETE" });
+      setMessage("参与用户已清空");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "清空参与用户失败");
+    }
+  }
+
+  async function clearWinners() {
+    if (!window.confirm("确认清空全部中奖记录？清空后已中奖用户可再次参与抽奖。")) {
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    try {
+      await authFetch("/api/winners", { method: "DELETE" });
+      setMessage("中奖记录已清空");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "清空中奖记录失败");
+    }
+  }
+
   function updatePrize(index: number, patch: Partial<Prize>) {
     setPrizes((list) => list.map((p, i) => (i === index ? { ...p, ...patch } : p)));
   }
@@ -170,7 +200,7 @@ export function AdminPage() {
 
       <section className="admin-card">
         <h2>内定中奖人</h2>
-        <p className="sub">有内定则开奖必中；已中奖用户不可再内定</p>
+        <p className="sub">有内定则开奖必中（优先级最高，可覆盖不可重复中奖）</p>
         {prizes.map((p) => (
           <div className="admin-row" key={`preset-${p.id}`}>
             <strong>{p.name}</strong>
@@ -203,6 +233,29 @@ export function AdminPage() {
             );
           })}
         </ul>
+        <div className="admin-actions">
+          <button type="button" className="danger" onClick={() => void clearWinners()}>
+            清空中奖记录
+          </button>
+        </div>
+      </section>
+
+      <section className="admin-card">
+        <h2>参与用户</h2>
+        <p className="sub">当前共 {participants.length} 人</p>
+        <ul>
+          {participants.map((u) => (
+            <li key={u.id}>
+              {u.name} ({u.id})
+            </li>
+          ))}
+        </ul>
+        <div className="admin-actions">
+          <button type="button" className="danger" onClick={() => void clearParticipants()}>
+            清空参与用户
+          </button>
+        </div>
+        <p className="sub">清空参与用户时会同时清除内定设置。</p>
       </section>
 
       {message ? <p className="ok">{message}</p> : null}

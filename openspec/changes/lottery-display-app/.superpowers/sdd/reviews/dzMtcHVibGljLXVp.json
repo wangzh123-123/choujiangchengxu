@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "base": "057f2535c4d8823b263f63b88722a4bb7eefbf08",
+  "head": "671a66a0d01fd20a59f67f12fed4c1607c9a8104",
+  "report": ".superpowers\\sdd\\reviews\\w3-public-ui.md",
+  "plan_hash": "sha256:86ec064d4f36cb60198a3c389fa7614c53ce9d9810c33c6375b2f238b4c53abb",
+  "plan_revision": 2,
+  "recorded_at": "2026-07-18T11:04:21.921Z"
+}

@@ -8,11 +8,13 @@ import { prizesRouter } from "./routes/prizes.js";
 import { participantsRouter } from "./routes/participants.js";
 import { presetsRouter } from "./routes/presets.js";
 import { drawRouter } from "./routes/draw.js";
+import { winnersRouter } from "./routes/winners.js";
 import { sessionRouter } from "./routes/session.js";
 
 export type CreateAppOptions = {
   stores?: AppStores;
   dataDir?: string;
+  clientDist?: string;
 };
 
 export function createApp(options: CreateAppOptions = {}): Express {
@@ -31,7 +33,22 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use(participantsRouter(stores));
   app.use(presetsRouter(stores));
   app.use(drawRouter(stores));
+  app.use(winnersRouter(stores));
   app.use(sessionRouter(stores));
+
+  if (options.clientDist) {
+    const dist = path.resolve(options.clientDist);
+    app.use(express.static(dist));
+    app.get("*", (req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        return next();
+      }
+      if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+        return next();
+      }
+      res.sendFile(path.join(dist, "index.html"));
+    });
+  }
 
   return app;
 }
@@ -45,9 +62,12 @@ function isDirectRun(): boolean {
 }
 
 if (isDirectRun()) {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const isProd = process.env.NODE_ENV === "production";
   const port = Number(process.env.PORT ?? 3001);
-  const host = process.env.HOST ?? "127.0.0.1";
-  createApp().listen(port, host, () => {
+  const host = isProd ? (process.env.HOST ?? "0.0.0.0") : (process.env.HOST ?? "127.0.0.1");
+  const clientDist = isProd ? path.resolve(here, "../../client/dist") : undefined;
+  createApp({ clientDist }).listen(port, host, () => {
     console.log(`lottery-server listening on http://${host}:${port}`);
   });
 }
