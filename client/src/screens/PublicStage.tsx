@@ -14,6 +14,7 @@ import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
 import { buildWinnerHistory } from "./winnerHistory";
+import { shouldIgnoreScreenNav } from "./screenNav";
 
 export function PublicStage() {
   const [view, setView] = useState<PublicView | null>(null);
@@ -63,6 +64,13 @@ export function PublicStage() {
   }, [refresh]);
 
   async function goScreen(screen: PublicScreen, fromAutoReveal = false) {
+    if (!view) {
+      return;
+    }
+    const visualScreen = rolling || holding ? "draw" : view.session.publicScreen;
+    if (!fromAutoReveal && shouldIgnoreScreenNav(screen, visualScreen)) {
+      return;
+    }
     if (!fromAutoReveal) {
       skipRevealRef.current = true;
       rollingRef.current = false;
