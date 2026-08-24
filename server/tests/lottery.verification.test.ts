@@ -244,4 +244,207 @@ describe("lottery verification", () => {
       expect(people.map((p) => p.id)).toContain(draw.body.participantId);
     });
   });
+
+  describe("roster add rename delete", () => {
+    it("rejects empty or whitespace add without changing the 100", async () => {
+      await seed100(app);
+      const empty = await request(app).post("/api/participants").send({ name: "" });
+      expect(empty.status).toBe(400);
+      const spaces = await request(app).post("/api/participants").send({ name: "  " });
+      expect(spaces.status).toBe(400);
+      const listed = await request(app).get("/api/participants");
+      expect(listed.body).toHaveLength(100);
+    });
+
+    it("rejects duplicate name among the 100", async () => {
+      await seed100(app);
+      const res = await request(app).post("/api/participants").send({ name: "用户001" });
+      expect(res.status).toBe(409);
+      expect(String(res.body.message)).toBe("名称重复，请重新输入");
+    });
+
+    it("appends a new unique name as the 101st", async () => {
+      await seed100(app);
+      const res = await request(app).post("/api/participants").send({ name: "用户101" });
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe("用户101");
+      const listed = await request(app).get("/api/participants");
+      expect(listed.body).toHaveLength(101);
+    });
+
+    it("renames a participant and keeps the same id", async () => {
+      const people = await seed100(app);
+      const first = byName(people, "用户001");
+      const res = await request(app)
+        .patch(`/api/participants/${first.id}`)
+        .send({ name: "用户001改" });
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(first.id);
+      expect(res.body.name).toBe("用户001改");
+      const listed = await request(app).get("/api/participants");
+      const names = (listed.body as Person[]).map((p) => p.name);
+      expect(names).toContain("用户001改");
+      expect(names).not.toContain("用户001");
+    });
+
+    it("allows rename to the current name", async () => {
+      const people = await seed100(app);
+      const first = byName(people, "用户001");
+      const res = await request(app)
+        .patch(`/api/participants/${first.id}`)
+        .send({ name: "用户001" });
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe("用户001");
+    });
+
+    it("rejects rename to another existing name", async () => {
+      const people = await seed100(app);
+      const first = byName(people, "用户001");
+      const res = await request(app)
+        .patch(`/api/participants/${first.id}`)
+        .send({ name: "用户002" });
+      expect(res.status).toBe(409);
+      expect(String(res.body.message)).toBe("名称重复，请重新输入");
+      const listed = await request(app).get("/api/participants");
+      const names = (listed.body as Person[]).map((p) => p.name);
+      expect(names).toContain("用户001");
+    });
+
+    it("returns 404 when renaming a missing id", async () => {
+      await seed100(app);
+      const res = await request(app).patch("/api/participants/missing").send({ name: "甲" });
+      expect(res.status).toBe(404);
+    });
+
+    it("rejects empty rename", async () => {
+      const people = await seed100(app);
+      const first = byName(people, "用户001");
+      const res = await request(app).patch(`/api/participants/${first.id}`).send({ name: "  " });
+      expect(res.status).toBe(400);
+    });
+
+    it("allows renaming a winner and shows the new name on public view", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+
+      const renamed = await request(app)
+        .patch(`/api/participants/${target.id}`)
+        .send({ name: "用户050改" });
+      expect(renamed.status).toBe(200);
+
+      const view = await request(app).get("/api/public/view");
+      expect(view.status).toBe(200);
+      expect(view.body.lastWinner.id).toBe(target.id);
+      expect(view.body.lastWinner.name).toBe("用户050改");
+      const winners = await request(app).get("/api/winners");
+      expect(winners.body[0].participantId).toBe(target.id);
+    });
+
+    it("draws the preset id after that person was renamed", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const renamed = await request(app)
+        .patch(`/api/participants/${target.id}`)
+        .send({ name: "用户050新" });
+      expect(renamed.status).toBe(200);
+
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+      expect(draw.body.participantId).toBe(target.id);
+      expect(draw.body.name).toBe("用户050新");
+    });
+
+    it("deletes a non-winner and drops them from the eligible pool", async () => {
+      const people = await seed100(app);
+      const first = byName(people, "用户001");
+      const res = await request(app).delete(`/api/participants/${first.id}`);
+      expect(res.status).toBe(204);
+      const listed = await request(app).get("/api/participants");
+      expect(listed.body).toHaveLength(99);
+      const eligible = await request(app).get("/api/eligible");
+      expect((eligible.body as Person[]).map((p) => p.id)).not.toContain(first.id);
+    });
+
+    it("clears preset when the preset person is deleted then draws someone else", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const deleted = await request(app).delete(`/api/participants/${target.id}`);
+      expect(deleted.status).toBe(204);
+      const presets = await request(app)
+        .get("/api/presets")
+        .set("Authorization", `Bearer ${token}`);
+      expect(presets.body).toEqual({});
+
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+      expect(draw.body.participantId).not.toBe(target.id);
+    });
+
+    it("refuses to delete a winner", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+
+      const res = await request(app).delete(`/api/participants/${target.id}`);
+      expect(res.status).toBe(409);
+      expect(String(res.body.message)).toBe("已中奖用户不能删除");
+      const listed = await request(app).get("/api/participants");
+      expect(listed.body).toHaveLength(100);
+    });
+
+    it("returns 404 when deleting a missing id", async () => {
+      await seed100(app);
+      const res = await request(app).delete("/api/participants/missing");
+      expect(res.status).toBe(404);
+    });
+
+    it("clears all participants and presets with admin auth", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      await putPrizes(app, token, [PRIZE_1]);
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: people[0]!.id });
+      const res = await request(app)
+        .delete("/api/participants")
+        .set("Authorization", `Bearer ${token}`);
+      expect(res.status).toBe(204);
+      expect((await request(app).get("/api/participants")).body).toEqual([]);
+      expect(
+        (await request(app).get("/api/presets").set("Authorization", `Bearer ${token}`)).body,
+      ).toEqual({});
+    });
+  });
 });
