@@ -187,7 +187,11 @@ body,
 }
 
 .ticker.settled .focus {
-  animation: pulse 700ms ease;
+  color: var(--accent);
+  transform: scale(1.08);
+  text-shadow: 0 0 24px rgba(212, 160, 23, 0.55);
+  outline: 2px solid var(--accent);
+  outline-offset: 8px;
 }
 
 .ticker-item.dim {
@@ -210,6 +214,17 @@ body,
   font-size: clamp(2.4rem, 8vw, 5rem);
   margin: 0.4rem 0;
   animation: pulse 900ms ease;
+}
+
+.winner-history {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem auto 0;
+  max-width: 480px;
+  color: var(--muted);
+  display: grid;
+  gap: 0.35rem;
+  text-align: center;
 }
 
 .host-bar {

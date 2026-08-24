@@ -8,10 +8,12 @@ import {
 } from "../api/client";
 import type { DrawResult, PublicScreen, PublicView } from "../api/types";
 import { HostControlBar } from "../components/HostControlBar";
+import { startSettleHold } from "../components/settleHold";
 import { DrawScreen } from "./DrawScreen";
 import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
+import { buildWinnerHistory } from "./winnerHistory";
 
 export function PublicStage() {
   const [view, setView] = useState<PublicView | null>(null);
@@ -21,7 +23,18 @@ export function PublicStage() {
   const [tickerNames, setTickerNames] = useState<string[]>([]);
   const [fadeKey, setFadeKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [holding, setHolding] = useState(false);
   const rollingRef = useRef(false);
+  const holdingRef = useRef(false);
+  const skipRevealRef = useRef(false);
+  const cancelHoldRef = useRef<(() => void) | null>(null);
+
+  function clearHold() {
+    cancelHoldRef.current?.();
+    cancelHoldRef.current = null;
+    holdingRef.current = false;
+    setHolding(false);
+  }
 
   const refresh = useCallback(async () => {
     const [v, p] = await Promise.all([fetchPublicView(), fetchPrizes()]);
@@ -43,17 +56,26 @@ export function PublicStage() {
     const timer = window.setInterval(() => {
       void refresh().catch(() => undefined);
     }, 3000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      clearHold();
+    };
   }, [refresh]);
 
-  async function goScreen(screen: PublicScreen) {
+  async function goScreen(screen: PublicScreen, fromAutoReveal = false) {
+    if (!fromAutoReveal) {
+      skipRevealRef.current = true;
+      rollingRef.current = false;
+      setRolling(false);
+      clearHold();
+    }
     await patchSession({ publicScreen: screen });
     setFadeKey((k) => k + 1);
     await refresh();
   }
 
   async function onSelectPrize(prizeId: string) {
-    if (rollingRef.current || !view) {
+    if (rollingRef.current || holdingRef.current || !view) {
       return;
     }
     const drawn = view.winners.some((w) => w.prizeId === prizeId);
@@ -67,6 +89,8 @@ export function PublicStage() {
     if (!view || rollingRef.current) {
       return;
     }
+    skipRevealRef.current = false;
+    clearHold();
     setError(null);
     if (view.winners.some((w) => w.prizeId === view.session.currentPrizeId)) {
       setError("该奖品已开奖");
@@ -104,18 +128,28 @@ export function PublicStage() {
     }
   }
 
-  async function onRollingSettled() {
+  function onRollingSettled() {
+    if (skipRevealRef.current) {
+      return;
+    }
     rollingRef.current = false;
     setRolling(false);
-    setSettleName(null);
-    await goScreen("winner");
+    holdingRef.current = true;
+    setHolding(true);
+    cancelHoldRef.current?.();
+    cancelHoldRef.current = startSettleHold(() => {
+      holdingRef.current = false;
+      setHolding(false);
+      cancelHoldRef.current = null;
+      void goScreen("winner", true);
+    });
   }
 
   if (!view) {
     return <div className="loading">{error ?? "加载中…"}</div>;
   }
 
-  const screen = rolling ? "draw" : view.session.publicScreen;
+  const screen = rolling || holding ? "draw" : view.session.publicScreen;
   const namesForTicker =
     rolling || tickerNames.length > 0 ? tickerNames : view.eligible.map((p) => p.name);
 
@@ -162,7 +196,11 @@ export function PublicStage() {
           />
         ) : null}
         {screen === "winner" ? (
-          <WinnerScreen prize={displayPrize} winner={displayWinner} />
+          <WinnerScreen
+            prize={displayPrize}
+            winner={displayWinner}
+            history={buildWinnerHistory(view.winners, prizes, view.participants)}
+          />
         ) : null}
       </div>
       {error ? <div className="toast error">{error}</div> : null}
@@ -171,12 +209,11 @@ export function PublicStage() {
         screen={screen}
         prizes={prizeOptions}
         currentPrizeId={view.session.currentPrizeId}
-        drawing={rolling}
+        drawing={rolling || holding}
         onToggleVisible={() => {
           void patchSession({ controlBarVisible: !view.session.controlBarVisible }).then(refresh);
         }}
         onScreen={(s) => {
-          if (rollingRef.current) return;
           void goScreen(s);
         }}
         onPrize={(id) => {
