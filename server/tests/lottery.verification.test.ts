@@ -171,4 +171,77 @@ describe("lottery verification", () => {
       expect(second.body.prizeId).toBe("p2");
     });
   });
+
+  describe("draw and preset edge cases", () => {
+    it("rejects draw when no current prize is selected", async () => {
+      const token = await login(app);
+      await seed100(app);
+      await putPrizes(app, token, [PRIZE_1]);
+      const res = await request(app).post("/api/draw");
+      expect(res.status).toBe(400);
+      expect(String(res.body.message)).toBe("未选择当前奖品，无法开奖");
+    });
+
+    it("rejects draw when current prize was removed from the catalog", async () => {
+      const token = await login(app);
+      await seed100(app);
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await putPrizes(app, token, []);
+      const res = await request(app).post("/api/draw");
+      expect(res.status).toBe(400);
+      expect(String(res.body.message)).toBe("当前奖品不存在");
+    });
+
+    it("rejects draw when eligible pool is empty and there is no preset", async () => {
+      const token = await login(app);
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      const res = await request(app).post("/api/draw");
+      expect(res.status).toBe(400);
+      expect(String(res.body.message)).toBe("没有可抽奖用户");
+    });
+
+    it("rejects preset when prize does not exist", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const res = await request(app)
+        .put("/api/presets/missing-prize")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: people[0]!.id });
+      expect(res.status).toBe(404);
+      expect(String(res.body.message)).toBe("奖品不存在");
+    });
+
+    it("rejects preset when participant does not exist", async () => {
+      const token = await login(app);
+      await putPrizes(app, token, [PRIZE_1]);
+      const res = await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: "missing-user" });
+      expect(res.status).toBe(404);
+      expect(String(res.body.message)).toBe("用户不存在");
+    });
+
+    it("draws from remaining pool after preset is cleared", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const cleared = await request(app)
+        .delete("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`);
+      expect(cleared.status).toBe(204);
+
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+      expect(people.map((p) => p.id)).toContain(draw.body.participantId);
+    });
+  });
 });
