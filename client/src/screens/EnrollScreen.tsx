@@ -108,7 +108,7 @@ function EnrollRow({
   return (
     <li className="enroll-row">
       <input
-        aria-label={`姓名-${participant.id}`}
+        aria-label={`姓名 ${participant.name}`}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => void save()}
