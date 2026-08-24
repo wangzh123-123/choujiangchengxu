@@ -89,4 +89,86 @@ describe("lottery verification", () => {
       expect(listed.body).toHaveLength(100);
     });
   });
+
+  describe("draw without preset", () => {
+    it("picks an eligible person from the 100 and excludes them afterward", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const eligibleBefore = await request(app).get("/api/eligible");
+      expect(eligibleBefore.status).toBe(200);
+      expect(eligibleBefore.body).toHaveLength(100);
+      const eligibleIds = (eligibleBefore.body as Person[]).map((p) => p.id);
+
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+      expect(eligibleIds).toContain(draw.body.participantId);
+      expect(people.map((p) => p.name)).toContain(draw.body.name);
+      expect(draw.body.prizeId).toBe("p1");
+
+      const winners = await request(app).get("/api/winners");
+      expect(winners.status).toBe(200);
+      expect(winners.body).toHaveLength(1);
+      expect(winners.body[0].prizeId).toBe("p1");
+      expect(winners.body[0].participantId).toBe(draw.body.participantId);
+
+      const eligibleAfter = await request(app).get("/api/eligible");
+      expect(eligibleAfter.body).toHaveLength(99);
+      expect((eligibleAfter.body as Person[]).map((p) => p.id)).not.toContain(
+        draw.body.participantId,
+      );
+
+      const again = await request(app).post("/api/draw");
+      expect(again.status).toBe(400);
+      expect(String(again.body.message)).toBe("该奖品已开奖");
+    });
+  });
+
+  describe("draw with preset", () => {
+    it("always selects the preset person among 100", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1]);
+      await setCurrentPrize(app, "p1");
+      const preset = await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      expect(preset.status).toBe(200);
+
+      const draw = await request(app).post("/api/draw");
+      expect(draw.status).toBe(200);
+      expect(draw.body.participantId).toBe(target.id);
+      expect(draw.body.name).toBe("用户050");
+    });
+
+    it("allows a prior winner to be preset and win again", async () => {
+      const token = await login(app);
+      const people = await seed100(app);
+      const target = byName(people, "用户050");
+      await putPrizes(app, token, [PRIZE_1, PRIZE_2]);
+      await setCurrentPrize(app, "p1");
+      await request(app)
+        .put("/api/presets/p1")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      const first = await request(app).post("/api/draw");
+      expect(first.status).toBe(200);
+      expect(first.body.participantId).toBe(target.id);
+
+      const presetAgain = await request(app)
+        .put("/api/presets/p2")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ participantId: target.id });
+      expect(presetAgain.status).toBe(200);
+      await setCurrentPrize(app, "p2");
+      const second = await request(app).post("/api/draw");
+      expect(second.status).toBe(200);
+      expect(second.body.participantId).toBe(target.id);
+      expect(second.body.prizeId).toBe("p2");
+    });
+  });
 });
