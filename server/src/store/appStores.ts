@@ -11,7 +11,7 @@ import type {
 
 const defaultSession: SessionState = {
   currentPrizeId: null,
-  publicScreen: "prize",
+  publicScreen: "enroll",
   controlBarVisible: true,
   drawPhase: "idle",
   lastWinnerParticipantId: null,

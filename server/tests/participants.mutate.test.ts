@@ -143,4 +143,9 @@ describe("participant mutate APIs", () => {
     const res = await request(app).delete("/api/participants/missing");
     expect(res.status).toBe(404);
   });
+
+  it("defaults publicScreen to enroll", async () => {
+    const res = await request(app).get("/api/session");
+    expect(res.body.publicScreen).toBe("enroll");
+  });
 });

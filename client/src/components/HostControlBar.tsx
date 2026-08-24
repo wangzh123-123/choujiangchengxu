@@ -14,7 +14,7 @@ type Props = {
   onDraw: () => void;
 };
 
-const order: PublicScreen[] = ["prize", "enroll", "draw", "winner"];
+const order: PublicScreen[] = ["enroll", "prize", "draw", "winner"];
 const labels: Record<PublicScreen, string> = {
   prize: "奖品",
   enroll: "参与",
