@@ -35,16 +35,18 @@ describe("e2e-smoke", () => {
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
       .send([{ id: "p1", name: "特等奖", imagePath: "a.svg", order: 0 }]);
-    await request(app).post("/api/participants").send({ id: "u1", name: "甲" });
-    await request(app).post("/api/participants").send({ id: "u2", name: "乙" });
+    const u1 = await request(app).post("/api/participants").send({ name: "甲" });
+    const u2 = await request(app).post("/api/participants").send({ name: "乙" });
+    expect(u1.status).toBe(201);
+    expect(u2.status).toBe(201);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: "u2" });
+      .send({ participantId: u2.body.id });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
-    expect(draw.body.participantId).toBe("u2");
+    expect(draw.body.participantId).toBe(u2.body.id);
     expect(draw.body.name).toBe("乙");
   });
 });

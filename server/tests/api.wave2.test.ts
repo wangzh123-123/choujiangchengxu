@@ -40,6 +40,12 @@ describe("Wave2 APIs", () => {
     return res.body.token as string;
   }
 
+  async function addNamed(name: string) {
+    const res = await request(app).post("/api/participants").send({ name });
+    expect(res.status).toBe(201);
+    return res.body as { id: string; name: string };
+  }
+
   it("rejects prize write without auth", async () => {
     const res = await request(app).put("/api/prizes").send([]);
     expect(res.status).toBe(401);
@@ -66,8 +72,8 @@ describe("Wave2 APIs", () => {
   });
 
   it("rejects duplicate name", async () => {
-    await request(app).post("/api/participants").send({ id: "1", name: "张三" });
-    const res = await request(app).post("/api/participants").send({ id: "2", name: "张三" });
+    await addNamed("张三");
+    const res = await request(app).post("/api/participants").send({ name: "张三" });
     expect(res.status).toBe(409);
     expect(String(res.body.message)).toMatch(/重新|重复|名称/);
   });
@@ -81,26 +87,26 @@ describe("Wave2 APIs", () => {
         { id: "p0", name: "三等奖", imagePath: "a.png", order: 0 },
         { id: "p1", name: "二等奖", imagePath: "b.png", order: 1 },
       ]);
-    await request(app).post("/api/participants").send({ id: "u1", name: "甲" });
-    await request(app).post("/api/participants").send({ id: "u2", name: "乙" });
+    const u1 = await addNamed("甲");
+    const u2 = await addNamed("乙");
     await request(app).put("/api/session/current-prize").send({ prizeId: "p0" });
     await request(app)
       .put("/api/presets/p0")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: "u1" });
+      .send({ participantId: u1.id });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
-    expect(draw.body.participantId).toBe("u1");
+    expect(draw.body.participantId).toBe(u1.id);
     // Preset has highest priority: same person may be preset/drawn again.
     const preset = await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: "u1" });
+      .send({ participantId: u1.id });
     expect(preset.status).toBe(200);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     const draw2 = await request(app).post("/api/draw");
     expect(draw2.status).toBe(200);
-    expect(draw2.body.participantId).toBe("u1");
+    expect(draw2.body.participantId).toBe(u1.id);
   });
 
   it("rejects draw with empty eligible", async () => {
@@ -131,26 +137,26 @@ describe("Wave2 APIs", () => {
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
       .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
-    await request(app).post("/api/participants").send({ id: "u1", name: "甲" });
-    await request(app).post("/api/participants").send({ id: "u2", name: "乙" });
+    const u1 = await addNamed("甲");
+    const u2 = await addNamed("乙");
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: "u2" });
+      .send({ participantId: u2.id });
     await request(app).patch("/api/session").send({ publicScreen: "draw" });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
-    expect(draw.body.participantId).toBe("u2");
+    expect(draw.body.participantId).toBe(u2.id);
     expect(draw.body.name).toBe("乙");
     const session = await request(app).get("/api/session");
     expect(session.body.publicScreen).toBe("draw");
-    expect(session.body.lastWinnerParticipantId).toBe("u2");
+    expect(session.body.lastWinnerParticipantId).toBe(u2.id);
   });
 
   it("clears participants and winners with admin auth", async () => {
     const token = await login();
-    await request(app).post("/api/participants").send({ id: "u1", name: "甲" });
+    const u1 = await addNamed("甲");
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
@@ -159,7 +165,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: "u1" });
+      .send({ participantId: u1.id });
     await request(app).post("/api/draw");
 
     const clearWinners = await request(app)
