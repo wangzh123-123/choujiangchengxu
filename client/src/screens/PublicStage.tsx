@@ -143,7 +143,13 @@ export function PublicStage() {
     <div className="stage">
       <div key={fadeKey} className="stage-frame fade">
         {screen === "prize" ? <PrizeScreen prize={view.currentPrize} /> : null}
-        {screen === "enroll" ? <EnrollScreen onAdded={() => void refresh()} /> : null}
+        {screen === "enroll" ? (
+          <EnrollScreen
+            participants={view.participants}
+            winnerIds={new Set(view.winners.map((w) => w.participantId))}
+            onChanged={() => void refresh()}
+          />
+        ) : null}
         {screen === "draw" ? (
           <DrawScreen
             prize={view.currentPrize}

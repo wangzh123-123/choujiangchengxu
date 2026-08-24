@@ -96,6 +96,36 @@ body,
   border-radius: 12px;
 }
 
+.enroll-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem auto 0;
+  max-width: 420px;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.enroll-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.enroll-row input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #355075;
+  background: #0f1a2c;
+  color: var(--text);
+}
+
+.enroll-row button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .enroll-form {
   display: grid;
   gap: 0.75rem;

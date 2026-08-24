@@ -1,4 +1,4 @@
-import type { DrawResult, PublicScreen, PublicView, SessionState } from "./types";
+import type { DrawResult, Participant, PublicScreen, PublicView, SessionState } from "./types";
 
 export function publicViewPath(): string {
   return "/api/public/view";
@@ -37,13 +37,30 @@ export async function setCurrentPrize(prizeId: string): Promise<SessionState> {
   return parseJson<SessionState>(res);
 }
 
-export async function addParticipant(id: string, name: string): Promise<unknown> {
+export async function addParticipant(name: string): Promise<Participant> {
   const res = await fetch("/api/participants", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, name }),
+    body: JSON.stringify({ name }),
   });
-  return parseJson(res);
+  return parseJson<Participant>(res);
+}
+
+export async function patchParticipant(id: string, name: string): Promise<Participant> {
+  const res = await fetch(`/api/participants/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return parseJson<Participant>(res);
+}
+
+export async function deleteParticipant(id: string): Promise<void> {
+  const res = await fetch(`/api/participants/${id}`, { method: "DELETE" });
+  if (res.status === 204) {
+    return;
+  }
+  await parseJson(res);
 }
 
 export async function startDraw(): Promise<DrawResult> {
