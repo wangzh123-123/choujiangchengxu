@@ -10,6 +10,7 @@
     "start": "npm run start --prefix server",
     "test": "npm run test --prefix server && npm run test --prefix client",
     "test:server": "npm run test --prefix server",
-    "test:client": "npm run test --prefix client"
+    "test:client": "npm run test --prefix client",
+    "setup:prizes": "node scripts/setup-prizes.mjs"
   }
 }
