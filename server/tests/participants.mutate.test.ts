@@ -113,7 +113,7 @@ describe("participant mutate APIs", () => {
     await request(app)
       .put(`/api/presets/p1`)
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: a.body.id });
+      .send({ slots: [a.body.id] });
     const res = await request(app).delete(`/api/participants/${a.body.id}`);
     expect(res.status).toBe(204);
     expect((await request(app).get("/api/participants")).body).toEqual([]);

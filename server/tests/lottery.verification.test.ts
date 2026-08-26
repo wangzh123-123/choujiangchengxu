@@ -136,7 +136,7 @@ describe("lottery verification", () => {
       const preset = await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       expect(preset.status).toBe(200);
 
       const draw = await request(app).post("/api/draw");
@@ -154,7 +154,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const first = await request(app).post("/api/draw");
       expect(first.status).toBe(200);
       expect(first.body.participantId).toBe(target.id);
@@ -162,7 +162,7 @@ describe("lottery verification", () => {
       const presetAgain = await request(app)
         .put("/api/presets/p2")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       expect(presetAgain.status).toBe(200);
       await setCurrentPrize(app, "p2");
       const second = await request(app).post("/api/draw");
@@ -208,7 +208,7 @@ describe("lottery verification", () => {
       const res = await request(app)
         .put("/api/presets/missing-prize")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: people[0]!.id });
+        .send({ slots: [people[0]!.id] });
       expect(res.status).toBe(404);
       expect(String(res.body.message)).toBe("奖品不存在");
     });
@@ -219,7 +219,7 @@ describe("lottery verification", () => {
       const res = await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: "missing-user" });
+        .send({ slots: ["missing-user"] });
       expect(res.status).toBe(404);
       expect(String(res.body.message)).toBe("用户不存在");
     });
@@ -233,7 +233,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const cleared = await request(app)
         .delete("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`);
@@ -332,7 +332,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const draw = await request(app).post("/api/draw");
       expect(draw.status).toBe(200);
 
@@ -358,7 +358,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const renamed = await request(app)
         .patch(`/api/participants/${target.id}`)
         .send({ name: "用户050新" });
@@ -390,7 +390,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const deleted = await request(app).delete(`/api/participants/${target.id}`);
       expect(deleted.status).toBe(204);
       const presets = await request(app)
@@ -412,7 +412,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: target.id });
+        .send({ slots: [target.id] });
       const draw = await request(app).post("/api/draw");
       expect(draw.status).toBe(200);
 
@@ -436,7 +436,7 @@ describe("lottery verification", () => {
       await request(app)
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
-        .send({ participantId: people[0]!.id });
+        .send({ slots: [people[0]!.id] });
       const res = await request(app)
         .delete("/api/participants")
         .set("Authorization", `Bearer ${token}`);

@@ -2,6 +2,8 @@ import { randomInt } from "node:crypto";
 import { Router } from "express";
 import { resolveWinner } from "../domain/draw.js";
 import { listEligible } from "../domain/eligibility.js";
+import { normalizePresetSlots, presetSlotAt } from "../domain/presetSlots.js";
+import { drawnCountForPrize, prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { WinnerRecord } from "../types.js";
 
@@ -28,7 +30,9 @@ export function drawRouter(stores: AppStores): Router {
     }
     const participants = await stores.participants.read();
     const presets = await stores.presets.read();
-    const presetId = presets[prizeId] ?? null;
+    const raw = presets[prizeId];
+    const slots = normalizePresetSlots(raw, prizeQuantity(prize));
+    const presetId = presetSlotAt(slots, drawnCountForPrize(winners, prizeId));
     const eligible = listEligible(participants, winners);
 
     let winnerId: string;

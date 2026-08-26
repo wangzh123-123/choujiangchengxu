@@ -93,7 +93,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/presets/p0")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: u1.id });
+      .send({ slots: [u1.id] });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
     expect(draw.body.participantId).toBe(u1.id);
@@ -101,7 +101,7 @@ describe("Wave2 APIs", () => {
     const preset = await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: u1.id });
+      .send({ slots: [u1.id] });
     expect(preset.status).toBe(200);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     const draw2 = await request(app).post("/api/draw");
@@ -143,7 +143,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: u2.id });
+      .send({ slots: [u2.id] });
     await request(app).patch("/api/session").send({ publicScreen: "draw" });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
@@ -165,7 +165,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: u1.id });
+      .send({ slots: [u1.id] });
     await request(app).post("/api/draw");
 
     const clearWinners = await request(app)

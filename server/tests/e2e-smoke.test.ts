@@ -43,7 +43,7 @@ describe("e2e-smoke", () => {
     await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
-      .send({ participantId: u2.body.id });
+      .send({ slots: [u2.body.id] });
     const draw = await request(app).post("/api/draw");
     expect(draw.status).toBe(200);
     expect(draw.body.participantId).toBe(u2.body.id);

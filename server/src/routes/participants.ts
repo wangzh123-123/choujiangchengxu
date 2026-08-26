@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { requireAdmin } from "../auth/adminAuth.js";
+import { clearParticipantFromPresets, normalizePresetSlots } from "../domain/presetSlots.js";
+import { prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
-import type { Participant } from "../types.js";
+import type { Participant, PresetMap } from "../types.js";
 
 export function participantsRouter(stores: AppStores): Router {
   const router = Router();
@@ -71,14 +73,19 @@ export function participantsRouter(stores: AppStores): Router {
       return;
     }
     await stores.participants.write(list.filter((p) => p.id !== id));
-    const presets = await stores.presets.read();
-    const nextPresets: Record<string, string> = {};
-    for (const [prizeId, participantId] of Object.entries(presets)) {
-      if (participantId !== id) {
-        nextPresets[prizeId] = participantId;
-      }
+    const prizes = await stores.prizes.read();
+    const raw = (await stores.presets.read()) as Record<string, unknown>;
+    const normalized: PresetMap = {};
+    for (const [prizeId, value] of Object.entries(raw)) {
+      const prize = prizes.find((p) => p.id === prizeId);
+      const quantity = prize
+        ? prizeQuantity(prize)
+        : Array.isArray(value)
+          ? value.length
+          : 1;
+      normalized[prizeId] = normalizePresetSlots(value, quantity);
     }
-    await stores.presets.write(nextPresets);
+    await stores.presets.write(clearParticipantFromPresets(normalized, id));
     res.status(204).end();
   });
 
