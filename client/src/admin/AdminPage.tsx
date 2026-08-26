@@ -137,6 +137,7 @@ export function AdminPage() {
         name: "新奖品",
         imagePath: "prize-default.svg",
         order: list.length,
+        quantity: 1,
       },
     ]);
   }

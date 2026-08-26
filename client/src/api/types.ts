@@ -5,6 +5,7 @@ export type Prize = {
   name: string;
   imagePath: string;
   order: number;
+  quantity: number;
 };
 
 export type Participant = {
@@ -29,6 +30,7 @@ export type PublicView = {
   lastWinner: Participant | null;
   lastPrize: Prize | null;
   winners: Array<{ prizeId: string; participantId: string; at: string }>;
+  canDraw: boolean;
 };
 
 export type DrawResult = {
@@ -36,4 +38,7 @@ export type DrawResult = {
   prizeName: string;
   participantId: string;
   name: string;
+  drawnCount: number;
+  quantity: number;
+  prizeComplete: boolean;
 };

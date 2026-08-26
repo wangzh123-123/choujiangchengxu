@@ -1,4 +1,4 @@
-import type { DrawResult, Participant, PublicScreen, PublicView, SessionState } from "./types";
+import type { DrawResult, Participant, Prize, PublicScreen, PublicView, SessionState } from "./types";
 
 export function publicViewPath(): string {
   return "/api/public/view";
@@ -68,9 +68,9 @@ export async function startDraw(): Promise<DrawResult> {
   return parseJson<DrawResult>(res);
 }
 
-export async function fetchPrizes(): Promise<Array<{ id: string; name: string }>> {
+export async function fetchPrizes(): Promise<Prize[]> {
   const res = await fetch("/api/prizes");
-  return parseJson(res);
+  return parseJson<Prize[]>(res);
 }
 
 export async function adminLogin(passphrase: string): Promise<{ token: string }> {

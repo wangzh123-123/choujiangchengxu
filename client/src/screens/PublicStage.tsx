@@ -6,7 +6,7 @@ import {
   setCurrentPrize,
   startDraw,
 } from "../api/client";
-import type { DrawResult, PublicScreen, PublicView } from "../api/types";
+import type { DrawResult, Prize, PublicScreen, PublicView } from "../api/types";
 import { HostControlBar } from "../components/HostControlBar";
 import { startSettleHold } from "../components/settleHold";
 import { DrawScreen } from "./DrawScreen";
@@ -18,7 +18,7 @@ import { shouldIgnoreScreenNav } from "./screenNav";
 
 export function PublicStage() {
   const [view, setView] = useState<PublicView | null>(null);
-  const [prizes, setPrizes] = useState<Array<{ id: string; name: string }>>([]);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
   const [rolling, setRolling] = useState(false);
   const [settleName, setSettleName] = useState<string | null>(null);
   const [tickerNames, setTickerNames] = useState<string[]>([]);
@@ -47,7 +47,7 @@ export function PublicStage() {
     } else {
       setView(v);
     }
-    setPrizes(p.map((x) => ({ id: x.id, name: x.name })));
+    setPrizes(p);
   }, []);
 
   useEffect(() => {
@@ -161,10 +161,11 @@ export function PublicStage() {
   const namesForTicker =
     rolling || tickerNames.length > 0 ? tickerNames : view.eligible.map((p) => p.name);
 
-  const drawnPrizeIds = new Set(view.winners.map((w) => w.prizeId));
   const prizeOptions = prizes.map((p) => ({
-    ...p,
-    drawn: drawnPrizeIds.has(p.id),
+    id: p.id,
+    name: p.name,
+    drawnCount: view.winners.filter((w) => w.prizeId === p.id).length,
+    quantity: p.quantity ?? 1,
   }));
 
   // When showing winner for the selected prize, resolve that prize's winner (not only last draw).
@@ -218,6 +219,7 @@ export function PublicStage() {
         prizes={prizeOptions}
         currentPrizeId={view.session.currentPrizeId}
         drawing={rolling || holding}
+        waitingForStop={false}
         onToggleVisible={() => {
           void patchSession({ controlBarVisible: !view.session.controlBarVisible }).then(refresh);
         }}
@@ -228,6 +230,7 @@ export function PublicStage() {
           void onSelectPrize(id);
         }}
         onDraw={() => void onDraw()}
+        onStop={() => undefined}
       />
     </div>
   );
