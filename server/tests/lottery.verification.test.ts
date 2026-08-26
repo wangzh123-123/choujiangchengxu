@@ -107,6 +107,9 @@ describe("lottery verification", () => {
       expect(eligibleIds).toContain(draw.body.participantId);
       expect(people.map((p) => p.name)).toContain(draw.body.name);
       expect(draw.body.prizeId).toBe("p1");
+      expect(draw.body.drawnCount).toBe(1);
+      expect(draw.body.quantity).toBe(1);
+      expect(draw.body.prizeComplete).toBe(true);
 
       const winners = await request(app).get("/api/winners");
       expect(winners.status).toBe(200);
@@ -122,7 +125,7 @@ describe("lottery verification", () => {
 
       const again = await request(app).post("/api/draw");
       expect(again.status).toBe(400);
-      expect(String(again.body.message)).toBe("该奖品已开奖");
+      expect(String(again.body.message)).toBe("该奖品已抽完");
     });
   });
 

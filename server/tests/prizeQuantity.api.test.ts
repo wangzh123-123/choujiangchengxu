@@ -63,4 +63,24 @@ describe("prize quantity API", () => {
     expect(res.status).toBe(200);
     expect(res.body[0].quantity).toBe(3);
   });
+
+  it("PUT rejects quantity below already-drawn count", async () => {
+    const login = await request(app).post("/api/admin/login").send({ passphrase: "admin123" });
+    const token = login.body.token as string;
+    await request(app)
+      .put("/api/prizes")
+      .set("Authorization", `Bearer ${token}`)
+      .send([{ id: "p1", name: "A", imagePath: "a.png", order: 0, quantity: 2 }]);
+    await request(app).post("/api/participants").send({ name: "甲" });
+    await request(app).post("/api/participants").send({ name: "乙" });
+    await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
+    expect((await request(app).post("/api/draw")).status).toBe(200);
+    expect((await request(app).post("/api/draw")).status).toBe(200);
+    const res = await request(app)
+      .put("/api/prizes")
+      .set("Authorization", `Bearer ${token}`)
+      .send([{ id: "p1", name: "A", imagePath: "a.png", order: 0, quantity: 1 }]);
+    expect(res.status).toBe(400);
+    expect(String(res.body.message)).toBe("该奖品已抽出 2 人，数量不能小于 2");
+  });
 });

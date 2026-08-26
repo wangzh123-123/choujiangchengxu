@@ -3,7 +3,7 @@ import { Router } from "express";
 import { resolveWinner } from "../domain/draw.js";
 import { listEligible } from "../domain/eligibility.js";
 import { normalizePresetSlots, presetSlotAt } from "../domain/presetSlots.js";
-import { drawnCountForPrize, prizeQuantity } from "../domain/prizeQuantity.js";
+import { drawnCountForPrize, isPrizeComplete, prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { WinnerRecord } from "../types.js";
 
@@ -24,15 +24,16 @@ export function drawRouter(stores: AppStores): Router {
       return;
     }
     const winners = await stores.winners.read();
-    if (winners.some((w) => w.prizeId === prizeId)) {
-      res.status(400).json({ message: "该奖品已开奖" });
+    const quantity = prizeQuantity(prize);
+    const drawnCountBefore = drawnCountForPrize(winners, prizeId);
+    if (isPrizeComplete(winners, prizeId, quantity)) {
+      res.status(400).json({ message: "该奖品已抽完" });
       return;
     }
     const participants = await stores.participants.read();
     const presets = await stores.presets.read();
-    const raw = presets[prizeId];
-    const slots = normalizePresetSlots(raw, prizeQuantity(prize));
-    const presetId = presetSlotAt(slots, drawnCountForPrize(winners, prizeId));
+    const slots = normalizePresetSlots(presets[prizeId], quantity);
+    const presetId = presetSlotAt(slots, drawnCountBefore);
     const eligible = listEligible(participants, winners);
 
     let winnerId: string;
@@ -78,11 +79,15 @@ export function drawRouter(stores: AppStores): Router {
     session.lastWinnerParticipantId = winner.id;
     session.lastWinnerPrizeId = prizeId;
     await stores.session.write(session);
+    const drawnCount = drawnCountBefore + 1;
     res.json({
       prizeId,
       prizeName: prize.name,
       participantId: winner.id,
       name: winner.name,
+      drawnCount,
+      quantity,
+      prizeComplete: isPrizeComplete(winners, prizeId, quantity),
     });
   });
 
