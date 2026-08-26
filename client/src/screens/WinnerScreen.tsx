@@ -4,15 +4,23 @@ import type { WinnerHistoryRow } from "./winnerHistory";
 
 type Props = {
   prize: Prize | null;
-  winner: Participant | null;
+  winners: Participant[];
   history: WinnerHistoryRow[];
 };
 
-export function WinnerScreen({ prize, winner, history }: Props) {
+export function WinnerScreen({ prize, winners, history }: Props) {
   return (
     <section className="screen winner-screen">
       <p className="eyebrow">中奖公示</p>
-      <h1 className="winner-name highlight">{winner?.name ?? "—"}</h1>
+      {winners.length <= 1 ? (
+        <h1 className="winner-name highlight">{winners[0]?.name ?? "—"}</h1>
+      ) : (
+        <ul className="winner-names">
+          {winners.map((w) => (
+            <li key={w.id} className="winner-name highlight">{w.name}</li>
+          ))}
+        </ul>
+      )}
       <p className="sub">获得 {prize?.name ?? "奖品"}</p>
       {prize ? (
         <div className="prize-image-wrap">

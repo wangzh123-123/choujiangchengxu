@@ -13,7 +13,7 @@ import { DrawScreen } from "./DrawScreen";
 import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
-import { buildWinnerHistory } from "./winnerHistory";
+import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
 import { shouldIgnoreScreenNav } from "./screenNav";
 
 export function PublicStage() {
@@ -178,14 +178,20 @@ export function PublicStage() {
       : selectedWinnerRecord
         ? view.currentPrize
         : view.lastPrize;
-  const displayWinner = selectedWinnerRecord
-    ? view.participants.find((p) => p.id === selectedWinnerRecord.participantId) ?? null
-    : view.lastWinner;
 
   return (
     <div className="stage">
       <div key={fadeKey} className="stage-frame fade">
-        {screen === "prize" ? <PrizeScreen prize={view.currentPrize} /> : null}
+        {screen === "prize" ? (
+          <PrizeScreen
+            prize={view.currentPrize}
+            drawnCount={
+              view.currentPrize
+                ? view.winners.filter((w) => w.prizeId === view.currentPrize?.id).length
+                : 0
+            }
+          />
+        ) : null}
         {screen === "enroll" ? (
           <EnrollScreen
             participants={view.participants}
@@ -207,7 +213,11 @@ export function PublicStage() {
         {screen === "winner" ? (
           <WinnerScreen
             prize={displayPrize}
-            winner={displayWinner}
+            winners={winnersForPrize(
+              view.winners,
+              view.session.currentPrizeId ?? displayPrize?.id ?? null,
+              view.participants,
+            )}
             history={buildWinnerHistory(view.winners, prizes, view.participants)}
           />
         ) : null}

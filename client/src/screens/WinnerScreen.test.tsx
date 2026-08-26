@@ -6,8 +6,8 @@ describe("WinnerScreen", () => {
   it("shows current winner and history list", () => {
     render(
       <WinnerScreen
-        prize={{ id: "p2", name: "二等奖", imagePath: "x.png", order: 1 }}
-        winner={{ id: "u2", name: "乙" }}
+        prize={{ id: "p2", name: "二等奖", imagePath: "x.png", order: 1, quantity: 1 }}
+        winners={[{ id: "u2", name: "乙" }]}
         history={[
           { prizeName: "三等奖", winnerName: "甲" },
           { prizeName: "二等奖", winnerName: "乙" },
@@ -17,5 +17,20 @@ describe("WinnerScreen", () => {
     expect(screen.getByText("乙")).toBeInTheDocument();
     expect(screen.getByText("三等奖 — 甲")).toBeInTheDocument();
     expect(screen.getByText("二等奖 — 乙")).toBeInTheDocument();
+  });
+
+  it("shows all winners of a prize", () => {
+    render(
+      <WinnerScreen
+        prize={{ id: "p1", name: "特等奖", imagePath: "x.png", order: 0, quantity: 2 }}
+        winners={[
+          { id: "u1", name: "甲" },
+          { id: "u2", name: "乙" },
+        ]}
+        history={[]}
+      />,
+    );
+    expect(screen.getByText("甲")).toBeInTheDocument();
+    expect(screen.getByText("乙")).toBeInTheDocument();
   });
 });

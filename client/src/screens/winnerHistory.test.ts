@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWinnerHistory } from "./winnerHistory";
+import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
 
 describe("buildWinnerHistory", () => {
   it("lists all winners in draw order including current", () => {
@@ -23,3 +23,23 @@ describe("buildWinnerHistory", () => {
     ]);
   });
 });
+
+describe("winnersForPrize", () => {
+  it("returns winners of one prize in draw order", () => {
+    expect(
+      winnersForPrize(
+        [
+          { prizeId: "p1", participantId: "u1" },
+          { prizeId: "p2", participantId: "u2" },
+          { prizeId: "p1", participantId: "u3" },
+        ],
+        "p1",
+        [
+          { id: "u1", name: "甲" },
+          { id: "u3", name: "丙" },
+        ],
+      ).map((p) => p.name),
+    ).toEqual(["甲", "丙"]);
+  });
+});
+

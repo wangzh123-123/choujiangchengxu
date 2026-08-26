@@ -3,9 +3,10 @@ import { imageUrl } from "../api/client";
 
 type Props = {
   prize: Prize | null;
+  drawnCount: number;
 };
 
-export function PrizeScreen({ prize }: Props) {
+export function PrizeScreen({ prize, drawnCount }: Props) {
   if (!prize) {
     return (
       <section className="screen prize-screen">
@@ -17,6 +18,7 @@ export function PrizeScreen({ prize }: Props) {
     <section className="screen prize-screen">
       <p className="eyebrow">本轮奖品</p>
       <h1>{prize.name}</h1>
+      <p className="sub">{prize.quantity} 份 · 已抽 {drawnCount}/{prize.quantity}</p>
       <div className="prize-image-wrap">
         <img src={imageUrl(prize.imagePath)} alt={prize.name} />
       </div>
