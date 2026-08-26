@@ -187,6 +187,40 @@ describe("PublicStage draw start/stop", () => {
     expect(patchSession).toHaveBeenCalledWith({ publicScreen: "winner" });
   });
 
+  it("ignores extra stop clicks while startDraw is in flight", async () => {
+    await renderStage();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole("button", { name: "停" })).toBeInTheDocument();
+
+    let resolveDraw: (value: DrawResult) => void = () => undefined;
+    const pending = new Promise<DrawResult>((resolve) => {
+      resolveDraw = resolve;
+    });
+    vi.mocked(startDraw).mockReturnValue(pending);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveDraw(incompleteDraw);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledTimes(1);
+  });
+
   it("shows 没有可抽奖用户 when canDraw is false and does not patch to draw", async () => {
     await renderStage(makeView({ canDraw: false }));
 

@@ -31,6 +31,7 @@ export function PublicStage() {
   const skipRevealRef = useRef(false);
   const prizeCompleteRef = useRef(false);
   const settleNameRef = useRef<string | null>(null);
+  const stoppingRef = useRef(false);
   const cancelHoldRef = useRef<(() => void) | null>(null);
 
   function clearHold() {
@@ -103,6 +104,7 @@ export function PublicStage() {
       return;
     }
     skipRevealRef.current = false;
+    stoppingRef.current = false;
     clearHold();
     setError(null);
     const prizeId = view.session.currentPrizeId;
@@ -141,9 +143,10 @@ export function PublicStage() {
   }
 
   async function onStop() {
-    if (!rollingRef.current || settleNameRef.current !== null) {
+    if (!rollingRef.current || settleNameRef.current !== null || stoppingRef.current) {
       return;
     }
+    stoppingRef.current = true;
     try {
       const result: DrawResult = await startDraw();
       setTickerNames((names) =>
@@ -154,6 +157,7 @@ export function PublicStage() {
       setSettleName(result.name);
       await refresh();
     } catch (err) {
+      stoppingRef.current = false;
       rollingRef.current = false;
       settleNameRef.current = null;
       setRolling(false);
