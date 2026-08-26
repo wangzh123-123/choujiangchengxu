@@ -2,7 +2,9 @@ import express, { type Express } from "express";
 import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { maybeApplyPrizeSeed } from "./domain/prizeCatalog.js";
 import { createStores, type AppStores } from "./store/appStores.js";
+import { resolveCatalogDir, resolveDataDir } from "./store/paths.js";
 import { adminRouter } from "./routes/admin.js";
 import { prizesRouter } from "./routes/prizes.js";
 import { participantsRouter } from "./routes/participants.js";
@@ -61,13 +63,18 @@ function isDirectRun(): boolean {
   return path.resolve(entry) === path.resolve(fileURLToPath(import.meta.url));
 }
 
-if (isDirectRun()) {
+async function main(): Promise<void> {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const isProd = process.env.NODE_ENV === "production";
   const port = Number(process.env.PORT ?? 3001);
   const host = isProd ? (process.env.HOST ?? "0.0.0.0") : (process.env.HOST ?? "127.0.0.1");
   const clientDist = isProd ? path.resolve(here, "../../client/dist") : undefined;
+  await maybeApplyPrizeSeed(resolveCatalogDir(), resolveDataDir());
   createApp({ clientDist }).listen(port, host, () => {
     console.log(`lottery-server listening on http://${host}:${port}`);
   });
+}
+
+if (isDirectRun()) {
+  void main();
 }
