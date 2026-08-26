@@ -10,10 +10,10 @@ import { hundredNames } from "./helpers/hundredNames.js";
 
 type App = ReturnType<typeof createApp>;
 type Person = { id: string; name: string };
-type PrizeBody = { id: string; name: string; imagePath: string; order: number };
+type PrizeBody = { id: string; name: string; imagePath: string; order: number; quantity: number };
 
-const PRIZE_1: PrizeBody = { id: "p1", name: "一等奖", imagePath: "a.png", order: 0 };
-const PRIZE_2: PrizeBody = { id: "p2", name: "二等奖", imagePath: "b.png", order: 1 };
+const PRIZE_1: PrizeBody = { id: "p1", name: "一等奖", imagePath: "a.png", order: 0, quantity: 1 };
+const PRIZE_2: PrizeBody = { id: "p2", name: "二等奖", imagePath: "b.png", order: 1, quantity: 1 };
 
 async function makeDataDir(): Promise<string> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "lottery-verify-"));

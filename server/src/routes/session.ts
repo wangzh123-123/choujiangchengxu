@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { listEligible } from "../domain/eligibility.js";
+import { normalizePrize } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { PublicScreen, SessionState } from "../types.js";
 
@@ -50,15 +51,17 @@ export function sessionRouter(stores: AppStores): Router {
     const prizes = await stores.prizes.read();
     const participants = await stores.participants.read();
     const winners = await stores.winners.read();
-    const currentPrize = prizes.find((p) => p.id === session.currentPrizeId) ?? null;
+    const currentRaw = prizes.find((p) => p.id === session.currentPrizeId) ?? null;
+    const currentPrize = currentRaw ? normalizePrize(currentRaw) : null;
     const lastWinner =
       session.lastWinnerParticipantId == null
         ? null
         : participants.find((p) => p.id === session.lastWinnerParticipantId) ?? null;
-    const lastPrize =
+    const lastPrizeRaw =
       session.lastWinnerPrizeId == null
         ? null
         : prizes.find((p) => p.id === session.lastWinnerPrizeId) ?? null;
+    const lastPrize = lastPrizeRaw ? normalizePrize(lastPrizeRaw) : null;
     res.json({
       session,
       currentPrize,

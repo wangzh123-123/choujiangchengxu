@@ -93,7 +93,7 @@ describe("participant mutate APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     const a = await request(app).post("/api/participants").send({ name: "甲" });
     await request(app).post("/api/participants").send({ name: "乙" });
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
@@ -108,7 +108,7 @@ describe("participant mutate APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     const a = await request(app).post("/api/participants").send({ name: "甲" });
     await request(app)
       .put(`/api/presets/p1`)
@@ -127,7 +127,7 @@ describe("participant mutate APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     const a = await request(app).post("/api/participants").send({ name: "甲" });
     await request(app).post("/api/participants").send({ name: "乙" });
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });

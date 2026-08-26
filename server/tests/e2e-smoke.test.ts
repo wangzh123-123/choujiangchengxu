@@ -34,7 +34,7 @@ describe("e2e-smoke", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.svg", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.svg", order: 0, quantity: 1 }]);
     const u1 = await request(app).post("/api/participants").send({ name: "甲" });
     const u2 = await request(app).post("/api/participants").send({ name: "乙" });
     expect(u1.status).toBe(201);

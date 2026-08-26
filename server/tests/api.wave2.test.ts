@@ -65,7 +65,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     const res = await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     expect(res.status).toBe(200);
     expect(res.body.currentPrizeId).toBe("p1");
@@ -84,8 +84,8 @@ describe("Wave2 APIs", () => {
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
       .send([
-        { id: "p0", name: "三等奖", imagePath: "a.png", order: 0 },
-        { id: "p1", name: "二等奖", imagePath: "b.png", order: 1 },
+        { id: "p0", name: "三等奖", imagePath: "a.png", order: 0, quantity: 1 },
+        { id: "p1", name: "二等奖", imagePath: "b.png", order: 1, quantity: 1 },
       ]);
     const u1 = await addNamed("甲");
     const u2 = await addNamed("乙");
@@ -114,7 +114,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     const res = await request(app).post("/api/draw");
     expect(res.status).toBe(400);
@@ -136,7 +136,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     const u1 = await addNamed("甲");
     const u2 = await addNamed("乙");
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
@@ -160,7 +160,7 @@ describe("Wave2 APIs", () => {
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
-      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0 }]);
+      .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     await request(app)
       .put("/api/presets/p1")
