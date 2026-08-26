@@ -78,4 +78,47 @@ describe("setup prizes API", () => {
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("奖品缺少 name 或 imagePath");
   });
+
+  const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhAGftq4n1AAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  it("returns 404 when image upload flag is off", async () => {
+    const res = await request(app).post("/api/setup/prizes/image").set("Content-Type", "image/png").send(PNG);
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("仅本地配奖可用");
+  });
+
+  it("rejects empty or non-image", async () => {
+    process.env.LOTTERY_PRIZE_SETUP = "1";
+    app = createApp({ stores: createStores(dataDir), catalogDir });
+    const empty = await request(app)
+      .post("/api/setup/prizes/image")
+      .set("Content-Type", "image/png")
+      .send(Buffer.alloc(0));
+    expect(empty.status).toBe(400);
+    expect(empty.body.message).toBe("请上传图片");
+    const text = await request(app)
+      .post("/api/setup/prizes/image")
+      .set("Content-Type", "text/plain")
+      .set("X-Filename", "a.txt")
+      .send(Buffer.from("hello"));
+    expect(text.status).toBe(400);
+    expect(text.body.message).toBe("请上传图片");
+  });
+
+  it("writes file and returns imagePath", async () => {
+    process.env.LOTTERY_PRIZE_SETUP = "1";
+    app = createApp({ stores: createStores(dataDir), catalogDir });
+    const res = await request(app)
+      .post("/api/setup/prizes/image")
+      .set("Content-Type", "image/png")
+      .set("X-Filename", "cat.png")
+      .send(PNG);
+    expect(res.status).toBe(200);
+    expect(res.body.imagePath).toMatch(/\.png$/);
+    const saved = path.join(catalogDir, "uploads", res.body.imagePath as string);
+    expect((await readFile(saved)).equals(PNG)).toBe(true);
+  });
 });

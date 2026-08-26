@@ -7,7 +7,7 @@ import { createStores, type AppStores } from "./store/appStores.js";
 import { resolveCatalogDir, resolveDataDir } from "./store/paths.js";
 import { adminRouter } from "./routes/admin.js";
 import { prizesRouter } from "./routes/prizes.js";
-import { setupPrizesRouter } from "./routes/setupPrizes.js";
+import { setupPrizesRouter, setupPrizeImageHandler } from "./routes/setupPrizes.js";
 import { participantsRouter } from "./routes/participants.js";
 import { presetsRouter } from "./routes/presets.js";
 import { drawRouter } from "./routes/draw.js";
@@ -26,6 +26,11 @@ export function createApp(options: CreateAppOptions = {}): Express {
   const catalogDir = options.catalogDir ?? resolveCatalogDir();
   const app = express();
   app.use(cors({ origin: true, credentials: true }));
+  app.post(
+    "/api/setup/prizes/image",
+    express.raw({ type: () => true, limit: "8mb" }),
+    setupPrizeImageHandler(catalogDir),
+  );
   app.use(express.json({ limit: "2mb" }));
   app.use("/uploads", express.static(stores.paths.uploads));
 
