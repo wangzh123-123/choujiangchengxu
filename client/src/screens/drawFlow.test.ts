@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { afterHoldAction, startRollError } from "./drawFlow";
+import { afterHoldAction, isComplete, startRollError } from "./drawFlow";
 
 describe("startRollError", () => {
   it("requires a current prize", () => {
@@ -32,5 +32,14 @@ describe("afterHoldAction", () => {
 
   it("goes to winner when the prize is complete", () => {
     expect(afterHoldAction(true)).toBe("winner");
+  });
+});
+
+describe("isComplete", () => {
+  it("is true when drawnCount reaches quantity", () => {
+    expect(isComplete(0, 3)).toBe(false);
+    expect(isComplete(2, 3)).toBe(false);
+    expect(isComplete(3, 3)).toBe(true);
+    expect(isComplete(1, 1)).toBe(true);
   });
 });

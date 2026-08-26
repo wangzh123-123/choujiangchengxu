@@ -18,3 +18,7 @@ export function startRollError(opts: {
 export function afterHoldAction(prizeComplete: boolean): "winner" | "stay" {
   return prizeComplete ? "winner" : "stay";
 }
+
+export function isComplete(drawnCount: number, quantity: number): boolean {
+  return drawnCount >= quantity;
+}

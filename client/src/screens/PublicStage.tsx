@@ -13,6 +13,7 @@ import { DrawScreen } from "./DrawScreen";
 import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
+import { afterHoldAction, isComplete, startRollError } from "./drawFlow";
 import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
 import { shouldIgnoreScreenNav } from "./screenNav";
 
@@ -28,6 +29,8 @@ export function PublicStage() {
   const rollingRef = useRef(false);
   const holdingRef = useRef(false);
   const skipRevealRef = useRef(false);
+  const prizeCompleteRef = useRef(false);
+  const settleNameRef = useRef<string | null>(null);
   const cancelHoldRef = useRef<(() => void) | null>(null);
 
   function clearHold() {
@@ -86,46 +89,73 @@ export function PublicStage() {
     if (rollingRef.current || holdingRef.current || !view) {
       return;
     }
-    const drawn = view.winners.some((w) => w.prizeId === prizeId);
+    const selected = prizes.find((p) => p.id === prizeId);
+    const drawnCount = view.winners.filter((w) => w.prizeId === prizeId).length;
+    const complete = isComplete(drawnCount, selected?.quantity ?? 1);
     await setCurrentPrize(prizeId);
-    await patchSession({ publicScreen: drawn ? "winner" : "prize" });
+    await patchSession({ publicScreen: complete ? "winner" : "prize" });
     setFadeKey((k) => k + 1);
     await refresh();
   }
 
-  async function onDraw() {
-    if (!view || rollingRef.current) {
+  async function onStartRoll() {
+    if (!view || rollingRef.current || holdingRef.current) {
       return;
     }
     skipRevealRef.current = false;
     clearHold();
     setError(null);
-    if (view.winners.some((w) => w.prizeId === view.session.currentPrizeId)) {
-      setError("该奖品已开奖");
+    const prizeId = view.session.currentPrizeId;
+    const drawnCount = view.winners.filter((w) => w.prizeId === prizeId).length;
+    const err = startRollError({
+      currentPrizeId: prizeId,
+      prizeComplete: isComplete(drawnCount, view.currentPrize?.quantity ?? 1),
+      canDraw: view.canDraw,
+    });
+    if (err) {
+      setError(err);
       return;
     }
     const snapshot = view.participants.map((p) => p.name);
-    if (snapshot.length === 0) {
-      setError("没有可抽奖用户");
-      return;
-    }
     try {
       rollingRef.current = true;
+      settleNameRef.current = null;
+      prizeCompleteRef.current = false;
       setRolling(true);
       setSettleName(null);
       setTickerNames(snapshot);
       await patchSession({ publicScreen: "draw", drawPhase: "rolling" });
       setFadeKey((k) => k + 1);
       await refresh();
+    } catch (err) {
+      rollingRef.current = false;
+      settleNameRef.current = null;
+      setRolling(false);
+      setSettleName(null);
+      const raw = err instanceof Error ? err.message : "开奖失败";
+      if (!/内定/.test(raw)) {
+        setError(raw);
+      }
+      await refresh();
+    }
+  }
 
+  async function onStop() {
+    if (!rollingRef.current || settleNameRef.current !== null) {
+      return;
+    }
+    try {
       const result: DrawResult = await startDraw();
       setTickerNames((names) =>
         names.includes(result.name) ? names : [...names, result.name],
       );
+      prizeCompleteRef.current = result.prizeComplete;
+      settleNameRef.current = result.name;
       setSettleName(result.name);
       await refresh();
     } catch (err) {
       rollingRef.current = false;
+      settleNameRef.current = null;
       setRolling(false);
       setSettleName(null);
       const raw = err instanceof Error ? err.message : "开奖失败";
@@ -149,7 +179,9 @@ export function PublicStage() {
       holdingRef.current = false;
       setHolding(false);
       cancelHoldRef.current = null;
-      void goScreen("winner", true);
+      if (afterHoldAction(prizeCompleteRef.current) === "winner") {
+        void goScreen("winner", true);
+      }
     });
   }
 
@@ -228,8 +260,8 @@ export function PublicStage() {
         screen={screen}
         prizes={prizeOptions}
         currentPrizeId={view.session.currentPrizeId}
-        drawing={rolling || holding}
-        waitingForStop={false}
+        drawing={holding || (rolling && settleName !== null)}
+        waitingForStop={rolling && settleName === null}
         onToggleVisible={() => {
           void patchSession({ controlBarVisible: !view.session.controlBarVisible }).then(refresh);
         }}
@@ -239,8 +271,8 @@ export function PublicStage() {
         onPrize={(id) => {
           void onSelectPrize(id);
         }}
-        onDraw={() => void onDraw()}
-        onStop={() => undefined}
+        onDraw={() => void onStartRoll()}
+        onStop={() => void onStop()}
       />
     </div>
   );
