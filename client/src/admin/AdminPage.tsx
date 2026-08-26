@@ -80,18 +80,6 @@ export function AdminPage() {
     );
   }
 
-  async function savePrizes() {
-    setError(null);
-    setMessage(null);
-    try {
-      await authFetch("/api/prizes", { method: "PUT", body: JSON.stringify(prizes) });
-      setMessage("奖品已保存");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
-    }
-  }
-
   async function savePresetSlots(prizeId: string, slots: Array<string | null>) {
     setError(null);
     setMessage(null);
@@ -137,23 +125,6 @@ export function AdminPage() {
     }
   }
 
-  function updatePrize(index: number, patch: Partial<Prize>) {
-    setPrizes((list) => list.map((p, i) => (i === index ? { ...p, ...patch } : p)));
-  }
-
-  function addPrize() {
-    setPrizes((list) => [
-      ...list,
-      {
-        id: `prize-${Date.now()}`,
-        name: "新奖品",
-        imagePath: "prize-default.svg",
-        order: list.length,
-        quantity: 1,
-      },
-    ]);
-  }
-
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -171,54 +142,6 @@ export function AdminPage() {
           </button>
         </div>
       </header>
-
-      <section className="admin-card">
-        <h2>奖品配置</h2>
-        <p className="sub">图片请放到 data/uploads/，此处填文件名（默认 prize-default.svg）</p>
-        {prizes.map((p, index) => (
-          <div className="admin-row" key={p.id}>
-            <label>
-              名称
-              <input
-                value={p.name}
-                onChange={(e) => updatePrize(index, { name: e.target.value })}
-              />
-            </label>
-            <label>
-              图片文件名
-              <input
-                value={p.imagePath}
-                onChange={(e) => updatePrize(index, { imagePath: e.target.value })}
-              />
-            </label>
-            <label>
-              排序
-              <input
-                type="number"
-                value={p.order}
-                onChange={(e) => updatePrize(index, { order: Number(e.target.value) })}
-              />
-            </label>
-            <label>
-              数量
-              <input
-                type="number"
-                min={1}
-                value={p.quantity}
-                onChange={(e) => updatePrize(index, { quantity: Number(e.target.value) })}
-              />
-            </label>
-          </div>
-        ))}
-        <div className="admin-actions">
-          <button type="button" onClick={addPrize}>
-            添加奖品
-          </button>
-          <button type="button" className="primary" onClick={() => void savePrizes()}>
-            保存奖品
-          </button>
-        </div>
-      </section>
 
       <section className="admin-card">
         <h2>内定中奖人</h2>
