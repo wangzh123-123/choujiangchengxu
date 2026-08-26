@@ -3,6 +3,7 @@ export type Prize = {
   name: string;
   imagePath: string;
   order: number;
+  quantity: number;
 };
 
 export type Participant = {
