@@ -1,26 +1,10 @@
 import { Router } from "express";
 import type { AppStores } from "../store/appStores.js";
-import type { PresetMap, Prize } from "../types.js";
+import type { PresetMap } from "../types.js";
 import { requireAdmin } from "../auth/adminAuth.js";
+import { isValidPrize } from "../domain/prizeValidate.js";
 import { drawnCountForPrize, normalizePrize } from "../domain/prizeQuantity.js";
 import { normalizePresetSlots, resizePresetSlots } from "../domain/presetSlots.js";
-
-function isValidPrize(p: unknown): p is Prize {
-  if (!p || typeof p !== "object") return false;
-  const o = p as Prize;
-  return (
-    typeof o.id === "string" &&
-    o.id.length > 0 &&
-    typeof o.name === "string" &&
-    o.name.trim().length > 0 &&
-    typeof o.imagePath === "string" &&
-    o.imagePath.length > 0 &&
-    typeof o.order === "number" &&
-    typeof o.quantity === "number" &&
-    Number.isInteger(o.quantity) &&
-    o.quantity >= 1
-  );
-}
 
 export function prizesRouter(stores: AppStores): Router {
   const router = Router();
