@@ -25,3 +25,16 @@ export function getPaths(dataDir = resolveDataDir()) {
 }
 
 export const paths = getPaths();
+
+/** Repo catalog directory (not LOTTERY_DATA_DIR). */
+export function resolveCatalogDir(): string {
+  return path.resolve(here, "../../../catalog");
+}
+
+export function getCatalogPaths(catalogDir = resolveCatalogDir()) {
+  return {
+    catalogDir,
+    prizes: path.join(catalogDir, "prizes.json"),
+    uploads: path.join(catalogDir, "uploads"),
+  } as const;
+}
