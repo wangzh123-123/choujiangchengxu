@@ -1,6 +1,8 @@
 import { Router } from "express";
+import { computeCanDraw } from "../domain/canDraw.js";
 import { listEligible } from "../domain/eligibility.js";
-import { normalizePrize } from "../domain/prizeQuantity.js";
+import { normalizePresetSlots } from "../domain/presetSlots.js";
+import { normalizePrize, prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { PublicScreen, SessionState } from "../types.js";
 
@@ -62,14 +64,26 @@ export function sessionRouter(stores: AppStores): Router {
         ? null
         : prizes.find((p) => p.id === session.lastWinnerPrizeId) ?? null;
     const lastPrize = lastPrizeRaw ? normalizePrize(lastPrizeRaw) : null;
+    const presets = await stores.presets.read();
+    const slots = currentPrize
+      ? normalizePresetSlots(presets[currentPrize.id], prizeQuantity(currentPrize))
+      : [];
+    const eligible = listEligible(participants, winners);
+    const canDraw = computeCanDraw({
+      prize: currentPrize,
+      winners,
+      eligibleCount: eligible.length,
+      slots,
+    });
     res.json({
       session,
       currentPrize,
       participants,
-      eligible: listEligible(participants, winners),
+      eligible,
       lastWinner,
       lastPrize,
       winners,
+      canDraw,
     });
   });
 
