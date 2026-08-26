@@ -3,36 +3,42 @@
     "id": "prize-1",
     "name": "一等奖（示例）",
     "imagePath": "prize-default.svg",
-    "order": 0
+    "order": 0,
+    "quantity": 1
   },
   {
     "id": "prize-2",
     "name": "二等奖（示例）",
     "imagePath": "prize-default.svg",
-    "order": 1
+    "order": 1,
+    "quantity": 1
   },
   {
     "id": "prize-3",
     "name": "三等奖（示例）",
     "imagePath": "prize-default.svg",
-    "order": 2
+    "order": 2,
+    "quantity": 1
   },
   {
     "id": "prize-1784373676791",
     "name": "参与奖",
     "imagePath": "prize-default.svg",
-    "order": 3
+    "order": 3,
+    "quantity": 1
   },
   {
     "id": "prize-1784373691582",
     "name": "第四个奖品",
     "imagePath": "prize-default.svg",
-    "order": 4
+    "order": 4,
+    "quantity": 1
   },
   {
     "id": "prize-1784374806279",
     "name": "新奖品",
     "imagePath": "prize-default.svg",
-    "order": 5
+    "order": 5,
+    "quantity": 1
   }
 ]

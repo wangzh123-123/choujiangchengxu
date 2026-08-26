@@ -2,6 +2,23 @@ import { useCallback, useEffect, useState } from "react";
 import type { Participant, Prize } from "../api/types";
 import { AdminLogin, clearAdminToken, getAdminToken } from "./AdminLogin";
 
+function asSlotMap(raw: unknown): Record<string, Array<string | null>> {
+  if (!raw || typeof raw !== "object") {
+    return {};
+  }
+  const out: Record<string, Array<string | null>> = {};
+  for (const [prizeId, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "string") {
+      out[prizeId] = [value.length > 0 ? value : null];
+    } else if (Array.isArray(value)) {
+      out[prizeId] = value.map((slot) =>
+        typeof slot === "string" && slot.length > 0 ? slot : null,
+      );
+    }
+  }
+  return out;
+}
+
 async function authFetch(path: string, init: RequestInit = {}) {
   const token = getAdminToken();
   const headers = new Headers(init.headers);
@@ -22,7 +39,7 @@ export function AdminPage() {
   const [authed, setAuthed] = useState(() => Boolean(getAdminToken()));
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [presets, setPresets] = useState<Record<string, string>>({});
+  const [presets, setPresets] = useState<Record<string, Array<string | null>>>({});
   const [winners, setWinners] = useState<Array<{ prizeId: string; participantId: string }>>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +53,7 @@ export function AdminPage() {
     ]);
     setPrizes(p as Prize[]);
     setParticipants(people as Participant[]);
-    setPresets(presetMap as Record<string, string>);
+    setPresets(asSlotMap(presetMap));
     setWinners((view as { winners: Array<{ prizeId: string; participantId: string }> }).winners);
   }, []);
 
@@ -75,20 +92,15 @@ export function AdminPage() {
     }
   }
 
-  async function savePreset(prizeId: string, participantId: string) {
+  async function savePresetSlots(prizeId: string, slots: Array<string | null>) {
     setError(null);
     setMessage(null);
     try {
-      if (!participantId) {
-        await authFetch(`/api/presets/${prizeId}`, { method: "DELETE" });
-        setMessage("已清除内定");
-      } else {
-        await authFetch(`/api/presets/${prizeId}`, {
-          method: "PUT",
-          body: JSON.stringify({ participantId }),
-        });
-        setMessage("内定已保存");
-      }
+      await authFetch(`/api/presets/${prizeId}`, {
+        method: "PUT",
+        body: JSON.stringify({ slots }),
+      });
+      setMessage("内定已保存");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "内定失败");
@@ -187,6 +199,15 @@ export function AdminPage() {
                 onChange={(e) => updatePrize(index, { order: Number(e.target.value) })}
               />
             </label>
+            <label>
+              数量
+              <input
+                type="number"
+                min={1}
+                value={p.quantity}
+                onChange={(e) => updatePrize(index, { quantity: Number(e.target.value) })}
+              />
+            </label>
           </div>
         ))}
         <div className="admin-actions">
@@ -201,23 +222,37 @@ export function AdminPage() {
 
       <section className="admin-card">
         <h2>内定中奖人</h2>
-        <p className="sub">有内定则开奖必中（优先级最高，可覆盖不可重复中奖）</p>
-        {prizes.map((p) => (
-          <div className="admin-row" key={`preset-${p.id}`}>
-            <strong>{p.name}</strong>
-            <select
-              value={presets[p.id] ?? ""}
-              onChange={(e) => void savePreset(p.id, e.target.value)}
-            >
-              <option value="">未内定（随机）</option>
-              {participants.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.id})
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+        <p className="sub">可按抽奖次序填写最多 N 个内定，空槽随机。有内定则该次开奖必中（优先级最高，可覆盖不可重复中奖）。</p>
+        {prizes.map((p) => {
+          const slots = presets[p.id] ?? Array.from({ length: p.quantity }, () => null);
+          return (
+            <div key={`preset-${p.id}`}>
+              <strong>{p.name}</strong>
+              <div className="admin-row">
+                {Array.from({ length: p.quantity }, (_, i) => (
+                  <label key={`${p.id}-${i}`}>
+                    第{i + 1}次
+                    <select
+                      value={slots[i] ?? ""}
+                      onChange={(e) => {
+                        const next = Array.from({ length: p.quantity }, (__, j) => slots[j] ?? null);
+                        next[i] = e.target.value.length > 0 ? e.target.value : null;
+                        void savePresetSlots(p.id, next);
+                      }}
+                    >
+                      <option value="">未内定（随机）</option>
+                      {participants.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="admin-card">
