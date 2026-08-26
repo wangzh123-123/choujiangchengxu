@@ -11,7 +11,8 @@ export type Participant = {
   name: string;
 };
 
-export type PresetMap = Record<string, string>;
+export type PresetSlots = Array<string | null>;
+export type PresetMap = Record<string, PresetSlots>;
 
 export type WinnerRecord = {
   prizeId: string;
