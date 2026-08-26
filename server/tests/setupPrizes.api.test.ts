@@ -90,6 +90,12 @@ describe("setup prizes API", () => {
     expect(res.body.message).toBe("仅本地配奖可用");
   });
 
+  it("flag-off image 404 does not require a large body", async () => {
+    const res = await request(app).post("/api/setup/prizes/image").set("Content-Type", "image/png").send(Buffer.alloc(0));
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("仅本地配奖可用");
+  });
+
   it("rejects empty or non-image", async () => {
     process.env.LOTTERY_PRIZE_SETUP = "1";
     app = createApp({ stores: createStores(dataDir), catalogDir });

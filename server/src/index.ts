@@ -2,12 +2,16 @@ import express, { type Express } from "express";
 import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { maybeApplyPrizeSeed } from "./domain/prizeCatalog.js";
+import { maybeApplyPrizeSeed, SETUP_UNAVAILABLE } from "./domain/prizeCatalog.js";
 import { createStores, type AppStores } from "./store/appStores.js";
 import { resolveCatalogDir, resolveDataDir } from "./store/paths.js";
 import { adminRouter } from "./routes/admin.js";
 import { prizesRouter } from "./routes/prizes.js";
-import { setupPrizesRouter, setupPrizeImageHandler } from "./routes/setupPrizes.js";
+import {
+  isPrizeSetupEnabled,
+  setupPrizesRouter,
+  setupPrizeImageHandler,
+} from "./routes/setupPrizes.js";
 import { participantsRouter } from "./routes/participants.js";
 import { presetsRouter } from "./routes/presets.js";
 import { drawRouter } from "./routes/draw.js";
@@ -28,6 +32,13 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use(cors({ origin: true, credentials: true }));
   app.post(
     "/api/setup/prizes/image",
+    (_req, res, next) => {
+      if (!isPrizeSetupEnabled()) {
+        res.status(404).json({ message: SETUP_UNAVAILABLE });
+        return;
+      }
+      next();
+    },
     express.raw({ type: () => true, limit: "8mb" }),
     setupPrizeImageHandler(catalogDir),
   );
@@ -85,5 +96,8 @@ async function main(): Promise<void> {
 }
 
 if (isDirectRun()) {
-  void main();
+  void main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }

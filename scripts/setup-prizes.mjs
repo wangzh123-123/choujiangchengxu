@@ -27,6 +27,19 @@ function openBrowser(url) {
   spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
 }
 
+async function waitForHealth(url, timeoutMs = 20_000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return;
+    } catch {
+      // server not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
 const serverFree = await isPortFree(3001);
 const clientFree = await isPortFree(5173);
 if (!serverFree || !clientFree) {
@@ -39,6 +52,7 @@ const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 const childOpts = { env, stdio: "inherit", shell: true };
 const server = spawn(npmCmd, ["run", "dev"], { ...childOpts, cwd: path.join(root, "server") });
 const client = spawn(npmCmd, ["run", "dev"], { ...childOpts, cwd: path.join(root, "client") });
+await waitForHealth("http://127.0.0.1:3001/api/health");
 openBrowser(SETUP_URL);
 
 function shutdown() {
