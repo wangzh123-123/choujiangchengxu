@@ -1,17 +1,17 @@
 [
   {
     "id": "prize-1",
-    "name": "一等奖（示例）",
+    "name": "招财猫门铃",
     "imagePath": "prize-default.svg",
     "order": 0,
-    "quantity": 1
+    "quantity": 3
   },
   {
     "id": "prize-2",
-    "name": "二等奖（示例）",
+    "name": "小米吹风机",
     "imagePath": "prize-default.svg",
     "order": 1,
-    "quantity": 1
+    "quantity": 2
   },
   {
     "id": "prize-3",
