@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Prize } from "../api/types";
+import { imageUrl } from "../api/client";
 
 type PreviewMap = Record<string, string>;
 
@@ -196,9 +197,11 @@ export function SetupPrizesPage() {
                 }}
               />
             </label>
-            {previews[p.id] ? (
-              <img src={previews[p.id]} alt={p.name} style={{ maxHeight: 64 }} />
-            ) : null}
+            <img
+              src={previews[p.id] ?? imageUrl(p.imagePath)}
+              alt={p.name}
+              style={{ maxHeight: 64 }}
+            />
             <span className="sub">{p.imagePath}</span>
             <button type="button" className="danger" onClick={() => removePrize(index)}>
               删除

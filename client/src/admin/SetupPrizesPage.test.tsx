@@ -39,6 +39,7 @@ describe("SetupPrizesPage", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<SetupPrizesPage />);
     expect(await screen.findByDisplayValue("一等奖")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "一等奖" })).toHaveAttribute("src", "/uploads/a.png");
     screen.getByRole("button", { name: "保存" }).click();
     await waitFor(() => {
       expect(screen.getByText("已写入仓库文件，未提交。大屏刷新即可看到")).toBeInTheDocument();
