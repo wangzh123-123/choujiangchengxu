@@ -15,30 +15,58 @@
   },
   {
     "id": "prize-3",
-    "name": "三等奖（示例）",
-    "imagePath": "prize-default.svg",
+    "name": "迪士尼文具套装",
+    "imagePath": "迪士尼联名文具套装.jpeg",
     "order": 2,
     "quantity": 1
   },
   {
     "id": "prize-1784373676791",
-    "name": "参与奖",
-    "imagePath": "prize-default.svg",
+    "name": "可斜挎暖水袋",
+    "imagePath": "可斜挎暖水袋.jpeg",
     "order": 3,
     "quantity": 1
   },
   {
     "id": "prize-1784373691582",
-    "name": "第四个奖品",
-    "imagePath": "prize-default.svg",
+    "name": "盲盒套装",
+    "imagePath": "盲盒套装.jpeg",
     "order": 4,
-    "quantity": 1
+    "quantity": 2
   },
   {
     "id": "prize-1784374806279",
-    "name": "新奖品",
-    "imagePath": "prize-default.svg",
+    "name": "草莓熊摆件",
+    "imagePath": "草莓熊摆件.jpeg",
     "order": 5,
+    "quantity": 1
+  },
+  {
+    "id": "prize-1787899980231",
+    "name": "唐颂茶具礼盒",
+    "imagePath": "唐颂茶具礼盒.jpeg",
+    "order": 6,
+    "quantity": 1
+  },
+  {
+    "id": "prize-1787899996235",
+    "name": "猪猪纸艺灯",
+    "imagePath": "猪猪纸艺灯.jpeg",
+    "order": 7,
+    "quantity": 1
+  },
+  {
+    "id": "prize-1787900011727",
+    "name": "香薰礼盒",
+    "imagePath": "香薰.jpeg",
+    "order": 8,
+    "quantity": 2
+  },
+  {
+    "id": "prize-1787900255667",
+    "name": "元宝画像框",
+    "imagePath": "元宝画相框.jpeg",
+    "order": 9,
     "quantity": 1
   }
 ]
