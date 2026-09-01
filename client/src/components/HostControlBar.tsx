@@ -85,7 +85,10 @@ export function HostControlBar({
       <button
         type="button"
         className="primary"
-        disabled={drawing || (!waitingForStop && (complete || !currentPrizeId))}
+        disabled={
+          drawing ||
+          (!waitingForStop && (screen !== "draw" || complete || !currentPrizeId))
+        }
         onClick={() => {
           if (waitingForStop) onStop();
           else onDraw();
