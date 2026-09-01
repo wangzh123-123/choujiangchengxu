@@ -1,72 +1,51 @@
 [
   {
     "id": "prize-1",
-    "name": "招财猫门铃",
-    "imagePath": "招财猫.png",
+    "name": "童心派送奖",
+    "imagePath": "童心派送奖.jpeg",
     "order": 0,
     "quantity": 3
   },
   {
     "id": "prize-2",
-    "name": "小米吹风机",
-    "imagePath": "吹风机.jpg",
+    "name": "万般惊喜奖",
+    "imagePath": "万般惊喜奖.jpeg",
     "order": 1,
     "quantity": 2
   },
   {
     "id": "prize-3",
-    "name": "迪士尼文具套装",
-    "imagePath": "迪士尼联名文具套装.jpeg",
+    "name": "暴富加持奖",
+    "imagePath": "暴富加持奖.jpeg",
     "order": 2,
     "quantity": 1
   },
   {
     "id": "prize-1784373676791",
-    "name": "可斜挎暖水袋",
-    "imagePath": "可斜挎暖水袋.jpeg",
+    "name": "星光永伴奖",
+    "imagePath": "星光永伴奖.jpeg",
     "order": 3,
     "quantity": 1
   },
   {
     "id": "prize-1784373691582",
-    "name": "盲盒套装",
-    "imagePath": "盲盒套装.jpeg",
+    "name": "芳禧盈怀奖",
+    "imagePath": "芳禧盈怀奖.jpeg",
     "order": 4,
     "quantity": 2
   },
   {
     "id": "prize-1784374806279",
-    "name": "草莓熊摆件",
-    "imagePath": "草莓熊摆件.jpeg",
+    "name": "顺风顺水奖",
+    "imagePath": "顺风顺水奖.jpeg",
     "order": 5,
     "quantity": 1
   },
   {
     "id": "prize-1787899980231",
-    "name": "唐颂茶具礼盒",
-    "imagePath": "唐颂茶具礼盒.jpeg",
+    "name": "头号幸运崽",
+    "imagePath": "头号幸运崽.png",
     "order": 6,
-    "quantity": 1
-  },
-  {
-    "id": "prize-1787899996235",
-    "name": "猪猪纸艺灯",
-    "imagePath": "猪猪纸艺灯.jpeg",
-    "order": 7,
-    "quantity": 1
-  },
-  {
-    "id": "prize-1787900011727",
-    "name": "香薰礼盒",
-    "imagePath": "香薰.jpeg",
-    "order": 8,
-    "quantity": 2
-  },
-  {
-    "id": "prize-1787900255667",
-    "name": "元宝画像框",
-    "imagePath": "元宝画相框.jpeg",
-    "order": 9,
     "quantity": 1
   }
 ]
