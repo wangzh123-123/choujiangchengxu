@@ -1,10 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { requireAdmin } from "../auth/adminAuth.js";
+import { writeParticipantsXml } from "../domain/participantXml.js";
 import { clearParticipantFromPresets, normalizePresetSlots } from "../domain/presetSlots.js";
 import { prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { Participant, PresetMap } from "../types.js";
+
+async function persistParticipants(stores: AppStores, list: Participant[]): Promise<void> {
+  await stores.participants.write(list);
+  await writeParticipantsXml(
+    stores.paths.participantsXml,
+    list.map((row) => row.name),
+  );
+}
 
 export function participantsRouter(stores: AppStores): Router {
   const router = Router();
@@ -26,7 +35,7 @@ export function participantsRouter(stores: AppStores): Router {
     }
     const next: Participant = { id: randomUUID(), name };
     list.push(next);
-    await stores.participants.write(list);
+    await persistParticipants(stores, list);
     res.status(201).json(next);
   });
 
@@ -52,7 +61,7 @@ export function participantsRouter(stores: AppStores): Router {
       return;
     }
     current.name = name;
-    await stores.participants.write(list);
+    await persistParticipants(stores, list);
     res.json(current);
   });
 
@@ -72,7 +81,8 @@ export function participantsRouter(stores: AppStores): Router {
       res.status(409).json({ message: "已中奖用户不能删除" });
       return;
     }
-    await stores.participants.write(list.filter((p) => p.id !== id));
+    const next = list.filter((p) => p.id !== id);
+    await persistParticipants(stores, next);
     const prizes = await stores.prizes.read();
     const raw = (await stores.presets.read()) as Record<string, unknown>;
     const normalized: PresetMap = {};
@@ -90,7 +100,7 @@ export function participantsRouter(stores: AppStores): Router {
   });
 
   router.delete("/api/participants", requireAdmin, async (_req, res) => {
-    await stores.participants.write([]);
+    await persistParticipants(stores, []);
     await stores.presets.write({});
     res.status(204).end();
   });
