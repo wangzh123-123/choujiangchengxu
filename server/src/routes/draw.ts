@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import { Router } from "express";
 import { resolveWinner } from "../domain/draw.js";
 import { listEligible } from "../domain/eligibility.js";
+import { nextIncompletePrizeId } from "../domain/nextPrize.js";
 import { normalizePresetSlots, presetSlotAt } from "../domain/presetSlots.js";
 import { drawnCountForPrize, isPrizeComplete, prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
@@ -74,12 +75,19 @@ export function drawRouter(stores: AppStores): Router {
     winners.push(record);
     await stores.winners.write(winners);
     // Keep publicScreen on draw so the client can play the rolling animation first.
+    const drawnCount = drawnCountBefore + 1;
+    const prizeComplete = isPrizeComplete(winners, prizeId, quantity);
     session.drawPhase = "revealed";
     session.publicScreen = "draw";
     session.lastWinnerParticipantId = winner.id;
     session.lastWinnerPrizeId = prizeId;
+    if (prizeComplete) {
+      const nextId = nextIncompletePrizeId(prizes, winners, prizeId);
+      if (nextId) {
+        session.currentPrizeId = nextId;
+      }
+    }
     await stores.session.write(session);
-    const drawnCount = drawnCountBefore + 1;
     res.json({
       prizeId,
       prizeName: prize.name,
@@ -87,7 +95,8 @@ export function drawRouter(stores: AppStores): Router {
       name: winner.name,
       drawnCount,
       quantity,
-      prizeComplete: isPrizeComplete(winners, prizeId, quantity),
+      prizeComplete,
+      currentPrizeId: session.currentPrizeId,
     });
   });
 
