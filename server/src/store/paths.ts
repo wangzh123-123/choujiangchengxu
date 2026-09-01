@@ -16,6 +16,7 @@ export function getPaths(dataDir = resolveDataDir()) {
     dataDir,
     prizes: path.join(dataDir, "prizes.json"),
     participants: path.join(dataDir, "participants.json"),
+    participantsXml: path.join(dataDir, "participants.xml"),
     presets: path.join(dataDir, "presets.json"),
     winners: path.join(dataDir, "winners.json"),
     session: path.join(dataDir, "session.json"),
