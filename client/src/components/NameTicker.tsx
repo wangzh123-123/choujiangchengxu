@@ -8,7 +8,8 @@ type Props = {
   onSettled?: () => void;
 };
 
-const ROLL_MS = 2800;
+export const ROLL_MS = 800;
+export const TICK_MS = 40;
 
 export function NameTicker({ names, rolling, settleName, onSettled }: Props) {
   const cycle = useMemo(() => buildCycle(names), [names]);
@@ -27,7 +28,7 @@ export function NameTicker({ names, rolling, settleName, onSettled }: Props) {
 
     const tick = window.setInterval(() => {
       setOffset((v) => (v + 1) % cycle.length);
-    }, 80);
+    }, TICK_MS);
 
     return () => {
       window.clearInterval(tick);
