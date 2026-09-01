@@ -59,6 +59,22 @@ describe("serializeParticipantsXml / parseParticipantsXml", () => {
       ParticipantXmlError,
     );
   });
+
+  it("throws when participant tags are nested or unclosed", () => {
+    expect(() =>
+      parseParticipantsXml(
+        "<participants><participant>甲<participant>乙</participant></participants>",
+      ),
+    ).toThrow(ParticipantXmlError);
+  });
+
+  it("skips empty self-closing participant and keeps following name", () => {
+    expect(
+      parseParticipantsXml(
+        "<participants><participant /><participant>甲</participant></participants>",
+      ),
+    ).toEqual(["甲"]);
+  });
 });
 
 describe("writeParticipantsXml", () => {

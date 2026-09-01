@@ -52,19 +52,23 @@ export function parseParticipantsXml(raw: string): string[] {
     throw new ParticipantXmlError();
   }
   const inner = root[1] ?? "";
-  const leftover = inner.replace(
-    /<participant(?:\s[^>]*)?(?:\/>|>([\s\S]*?)<\/participant>)/g,
-    " ",
-  );
+  // Self-closing: `\s[^/>]*` must not consume `/` before `/>` (e.g. `<participant />`).
+  const tagRe = /<participant(?:\s[^/>]*)?\s*(?:\/>|>([\s\S]*?)<\/participant>)/g;
+  const leftover = inner.replace(tagRe, " ");
   if (leftover.replace(/\s+/g, "") !== "") {
     throw new ParticipantXmlError();
   }
   const names: string[] = [];
   const seen = new Set<string>();
-  const tag = /<participant(?:\s[^>]*)?(?:\/>|>([\s\S]*?)<\/participant>)/g;
+  const tag = /<participant(?:\s[^/>]*)?\s*(?:\/>|>([\s\S]*?)<\/participant>)/g;
   let match: RegExpExecArray | null = tag.exec(inner);
   while (match) {
-    const text = unescapeXmlText(match[1] ?? "").trim();
+    const rawInner = match[1];
+    if (rawInner !== undefined && /[<>]/.test(rawInner)) {
+      // Names must escape < > as &lt; / &gt; (spec §2.2); raw markup means bad structure.
+      throw new ParticipantXmlError();
+    }
+    const text = unescapeXmlText(rawInner ?? "").trim();
     if (text && !seen.has(text)) {
       seen.add(text);
       names.push(text);
