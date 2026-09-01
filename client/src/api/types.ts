@@ -41,4 +41,5 @@ export type DrawResult = {
   drawnCount: number;
   quantity: number;
   prizeComplete: boolean;
+  currentPrizeId: string | null;
 };

@@ -76,6 +76,17 @@ function makeView(overrides: Partial<PublicView> = {}): PublicView {
   };
 }
 
+function drawView(overrides: Partial<PublicView> = {}): PublicView {
+  const base = makeView(overrides);
+  return {
+    ...base,
+    session: {
+      ...base.session,
+      publicScreen: overrides.session?.publicScreen ?? "draw",
+    },
+  };
+}
+
 const incompleteDraw: DrawResult = {
   prizeId: "p1",
   prizeName: "三等奖",
@@ -84,6 +95,7 @@ const incompleteDraw: DrawResult = {
   drawnCount: 1,
   quantity: 3,
   prizeComplete: false,
+  currentPrizeId: "p1",
 };
 
 const completeDraw: DrawResult = {
@@ -130,7 +142,7 @@ describe("PublicStage draw start/stop", () => {
   });
 
   it("starts rolling without calling startDraw; stop draws; incomplete hold stays on draw", async () => {
-    await renderStage();
+    await renderStage(drawView());
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -161,7 +173,7 @@ describe("PublicStage draw start/stop", () => {
   });
 
   it("goes to winner after hold when prizeComplete is true", async () => {
-    await renderStage();
+    await renderStage(drawView());
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -188,7 +200,7 @@ describe("PublicStage draw start/stop", () => {
   });
 
   it("ignores extra stop clicks while startDraw is in flight", async () => {
-    await renderStage();
+    await renderStage(drawView());
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -222,7 +234,7 @@ describe("PublicStage draw start/stop", () => {
   });
 
   it("shows 没有可抽奖用户 when canDraw is false and does not patch to draw", async () => {
-    await renderStage(makeView({ canDraw: false }));
+    await renderStage(drawView({ canDraw: false }));
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -232,5 +244,85 @@ describe("PublicStage draw start/stop", () => {
     expect(screen.getByText("没有可抽奖用户")).toBeInTheDocument();
     expect(startDraw).not.toHaveBeenCalled();
     expect(patchedScreens()).not.toContain("draw");
+  });
+
+  it("does not start rolling from the prize screen", async () => {
+    await renderStage(makeView());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+    });
+
+    expect(startDraw).not.toHaveBeenCalled();
+    expect(patchedScreens()).not.toContain("draw");
+    expect(screen.queryByTestId("draw-screen")).not.toBeInTheDocument();
+  });
+
+  it("shows the completed prize on winner while the dropdown is the next prize", async () => {
+    const nextPrize: Prize = {
+      id: "p2",
+      name: "二等奖",
+      imagePath: "y.png",
+      order: 1,
+      quantity: 1,
+    };
+    await renderStage(drawView());
+    vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const afterDraw = drawView({
+      session: {
+        currentPrizeId: "p2",
+        publicScreen: "draw",
+        controlBarVisible: true,
+        drawPhase: "revealed",
+        lastWinnerParticipantId: "u1",
+        lastWinnerPrizeId: "p1",
+      },
+      currentPrize: nextPrize,
+      lastWinner: { id: "u1", name: "甲" },
+      lastPrize: prize,
+      winners: [{ prizeId: "p1", participantId: "u1", at: "t" }],
+      canDraw: true,
+    });
+
+    vi.mocked(patchSession).mockImplementation(async (patch) => {
+      const next = {
+        ...afterDraw,
+        session: { ...afterDraw.session, ...patch },
+      };
+      vi.mocked(fetchPublicView).mockResolvedValue(next);
+      vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+      return next.session;
+    });
+    vi.mocked(fetchPublicView).mockResolvedValue(afterDraw);
+    vi.mocked(startDraw).mockResolvedValue({
+      ...completeDraw,
+      currentPrizeId: "p2",
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(patchSession).toHaveBeenCalledWith({ publicScreen: "winner" });
+    expect(screen.getByText("甲")).toBeInTheDocument();
+    expect(screen.getByText("获得 三等奖")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveValue("p2");
+    expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
   });
 });

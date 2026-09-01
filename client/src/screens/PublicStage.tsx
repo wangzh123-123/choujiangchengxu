@@ -16,6 +16,7 @@ import { WinnerScreen } from "./WinnerScreen";
 import { afterHoldAction, isComplete, startRollError } from "./drawFlow";
 import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
 import { shouldIgnoreScreenNav } from "./screenNav";
+import { winnerScreenPrizeId } from "./winnerDisplay";
 
 export function PublicStage() {
   const [view, setView] = useState<PublicView | null>(null);
@@ -101,6 +102,9 @@ export function PublicStage() {
 
   async function onStartRoll() {
     if (!view || rollingRef.current || holdingRef.current) {
+      return;
+    }
+    if (view.session.publicScreen !== "draw") {
       return;
     }
     skipRevealRef.current = false;
@@ -204,16 +208,21 @@ export function PublicStage() {
     quantity: p.quantity ?? 1,
   }));
 
-  // When showing winner for the selected prize, resolve that prize's winner (not only last draw).
-  const selectedWinnerRecord = view.winners.find(
-    (w) => w.prizeId === view.session.currentPrizeId,
-  );
+  const currentDrawnCount = view.currentPrize
+    ? view.winners.filter((w) => w.prizeId === view.currentPrize?.id).length
+    : 0;
+  const winnerPrizeId = winnerScreenPrizeId({
+    currentPrizeId: view.session.currentPrizeId,
+    lastWinnerPrizeId: view.session.lastWinnerPrizeId,
+    currentPrizeComplete: isComplete(
+      currentDrawnCount,
+      view.currentPrize?.quantity ?? 1,
+    ),
+  });
   const displayPrize =
-    selectedWinnerRecord && view.currentPrize?.id === selectedWinnerRecord.prizeId
-      ? view.currentPrize
-      : selectedWinnerRecord
-        ? view.currentPrize
-        : view.lastPrize;
+    prizes.find((p) => p.id === winnerPrizeId) ??
+    (view.currentPrize?.id === winnerPrizeId ? view.currentPrize : null) ??
+    (view.lastPrize?.id === winnerPrizeId ? view.lastPrize : null);
 
   return (
     <div className="stage">
@@ -251,7 +260,7 @@ export function PublicStage() {
             prize={displayPrize}
             winners={winnersForPrize(
               view.winners,
-              view.session.currentPrizeId ?? displayPrize?.id ?? null,
+              winnerPrizeId,
               view.participants,
             )}
             history={buildWinnerHistory(view.winners, prizes, view.participants)}
