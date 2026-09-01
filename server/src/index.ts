@@ -3,6 +3,7 @@ import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { maybeApplyPrizeSeed, SETUP_UNAVAILABLE } from "./domain/prizeCatalog.js";
+import { maybeApplyParticipantSeed } from "./domain/participantSeed.js";
 import { createStores, type AppStores } from "./store/appStores.js";
 import { resolveCatalogDir, resolveDataDir } from "./store/paths.js";
 import { adminRouter } from "./routes/admin.js";
@@ -90,6 +91,7 @@ async function main(): Promise<void> {
   const host = isProd ? (process.env.HOST ?? "0.0.0.0") : (process.env.HOST ?? "127.0.0.1");
   const clientDist = isProd ? path.resolve(here, "../../client/dist") : undefined;
   await maybeApplyPrizeSeed(resolveCatalogDir(), resolveDataDir());
+  await maybeApplyParticipantSeed(resolveDataDir());
   createApp({ clientDist }).listen(port, host, () => {
     console.log(`lottery-server listening on http://${host}:${port}`);
   });
