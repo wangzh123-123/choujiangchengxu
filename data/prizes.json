@@ -4,7 +4,7 @@
     "name": "童心派送奖",
     "imagePath": "童心派送奖.jpeg",
     "order": 0,
-    "quantity": 3
+    "quantity": 1
   },
   {
     "id": "prize-2",
@@ -25,7 +25,7 @@
     "name": "星光永伴奖",
     "imagePath": "星光永伴奖.jpeg",
     "order": 3,
-    "quantity": 1
+    "quantity": 3
   },
   {
     "id": "prize-1784373691582",
@@ -39,7 +39,7 @@
     "name": "顺风顺水奖",
     "imagePath": "顺风顺水奖.jpeg",
     "order": 5,
-    "quantity": 1
+    "quantity": 2
   },
   {
     "id": "prize-1787899980231",
