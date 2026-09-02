@@ -37,7 +37,8 @@ $env:NODE_ENV="production"; npm run start
 
 1. 将仓库连接到 [Render](https://render.com)，使用根目录 `render.yaml`（Blueprint）或手动创建 Web Service。
 2. 在 Render Dashboard 设置环境变量 **`ADMIN_PASSPHRASE`**（强口令，勿用 `admin123`）。
-3. 部署完成后使用 Render 提供的 `https://xxx.onrender.com` 访问大屏与 `/admin`。
+3. 生产环境不要设置相对路径 `LOTTERY_DATA_DIR=./data`。启动命令是 `npm run start --prefix server` 时，`./data` 会指向 `server/data`，而不是仓库根目录 `data/`。不设置该变量则使用仓库 `data/`。若 Dashboard Environment 仍有 `LOTTERY_DATA_DIR`，删除后再部署。
+4. 部署完成后使用 Render 提供的 `https://xxx.onrender.com` 访问大屏与 `/admin`。
 
 **数据持久说明：**
 
