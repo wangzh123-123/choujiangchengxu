@@ -188,13 +188,19 @@ export function PublicStage() {
     setHolding(true);
     cancelHoldRef.current?.();
     cancelHoldRef.current = startSettleHold(() => {
+      cancelHoldRef.current = null;
+      if (afterHoldAction(prizeCompleteRef.current) === "winner") {
+        void (async () => {
+          await goScreen("winner", true);
+          displayPrizeIdRef.current = null;
+          holdingRef.current = false;
+          setHolding(false);
+        })();
+        return;
+      }
+      displayPrizeIdRef.current = null;
       holdingRef.current = false;
       setHolding(false);
-      cancelHoldRef.current = null;
-      displayPrizeIdRef.current = null;
-      if (afterHoldAction(prizeCompleteRef.current) === "winner") {
-        void goScreen("winner", true);
-      }
     });
   }
 

@@ -318,6 +318,93 @@ describe("PublicStage draw start/stop", () => {
     expect(screen.getByTestId("draw-screen").textContent).toContain("甲");
   });
 
+  it("keeps frozen prize until delayed winner navigation finishes", async () => {
+    const nextPrize: Prize = {
+      id: "p2",
+      name: "二等奖",
+      imagePath: "y.png",
+      order: 1,
+      quantity: 1,
+    };
+    await renderStage(drawView());
+    vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const afterDraw = drawView({
+      session: {
+        currentPrizeId: "p2",
+        publicScreen: "draw",
+        controlBarVisible: true,
+        drawPhase: "revealed",
+        lastWinnerParticipantId: "u1",
+        lastWinnerPrizeId: "p1",
+      },
+      currentPrize: nextPrize,
+      lastWinner: { id: "u1", name: "甲" },
+      lastPrize: prize,
+      winners: [{ prizeId: "p1", participantId: "u1", at: "t" }],
+      canDraw: true,
+    });
+
+    let resolveWinnerPatch: ((session: PublicView["session"]) => void) | null = null;
+    const winnerPatchGate = new Promise<PublicView["session"]>((resolve) => {
+      resolveWinnerPatch = resolve;
+    });
+
+    vi.mocked(patchSession).mockImplementation(async (patch) => {
+      if (patch.publicScreen === "winner") {
+        const next = {
+          ...afterDraw,
+          session: { ...afterDraw.session, ...patch },
+        };
+        vi.mocked(fetchPublicView).mockResolvedValue(next);
+        vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+        return winnerPatchGate.then(() => next.session);
+      }
+      return { ...afterDraw.session, ...patch };
+    });
+    vi.mocked(fetchPublicView).mockResolvedValue(afterDraw);
+    vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+    vi.mocked(startDraw).mockResolvedValue({
+      ...completeDraw,
+      currentPrizeId: "p2",
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(patchSession).toHaveBeenCalledWith({ publicScreen: "winner" });
+    expect(screen.getByRole("combobox")).toHaveValue("p1");
+    expect(screen.getByTestId("draw-prize").textContent).toBe("三等奖");
+    expect(screen.getByTestId("draw-screen")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveWinnerPatch?.(
+        { ...afterDraw.session, publicScreen: "winner" },
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("获得 三等奖")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveValue("p2");
+  });
+
   it("shows the completed prize on winner while the dropdown is the next prize", async () => {
     const nextPrize: Prize = {
       id: "p2",
