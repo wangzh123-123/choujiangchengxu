@@ -34,6 +34,7 @@ export function PublicStage() {
   const settleNameRef = useRef<string | null>(null);
   const stoppingRef = useRef(false);
   const cancelHoldRef = useRef<(() => void) | null>(null);
+  const displayPrizeIdRef = useRef<string | null>(null);
 
   function clearHold() {
     cancelHoldRef.current?.();
@@ -81,6 +82,7 @@ export function PublicStage() {
       rollingRef.current = false;
       setRolling(false);
       clearHold();
+      displayPrizeIdRef.current = null;
     }
     await patchSession({ publicScreen: screen });
     setFadeKey((k) => k + 1);
@@ -122,6 +124,7 @@ export function PublicStage() {
       setError(err);
       return;
     }
+    displayPrizeIdRef.current = prizeId;
     const snapshot = view.eligible.map((p) => p.name);
     try {
       rollingRef.current = true;
@@ -138,6 +141,7 @@ export function PublicStage() {
       settleNameRef.current = null;
       setRolling(false);
       setSettleName(null);
+      displayPrizeIdRef.current = null;
       const raw = err instanceof Error ? err.message : "开奖失败";
       if (!/内定/.test(raw)) {
         setError(raw);
@@ -187,6 +191,7 @@ export function PublicStage() {
       holdingRef.current = false;
       setHolding(false);
       cancelHoldRef.current = null;
+      displayPrizeIdRef.current = null;
       if (afterHoldAction(prizeCompleteRef.current) === "winner") {
         void goScreen("winner", true);
       }
@@ -198,6 +203,16 @@ export function PublicStage() {
   }
 
   const screen = rolling || holding ? "draw" : view.session.publicScreen;
+  const freezePrize = rolling || holding;
+  const visiblePrizeId =
+    freezePrize && displayPrizeIdRef.current
+      ? displayPrizeIdRef.current
+      : view.session.currentPrizeId;
+  const drawPrize =
+    prizes.find((p) => p.id === visiblePrizeId) ??
+    (view.currentPrize?.id === visiblePrizeId ? view.currentPrize : null) ??
+    (view.lastPrize?.id === visiblePrizeId ? view.lastPrize : null) ??
+    view.currentPrize;
   const namesForTicker =
     rolling || tickerNames.length > 0 ? tickerNames : view.eligible.map((p) => p.name);
 
@@ -246,7 +261,7 @@ export function PublicStage() {
         ) : null}
         {screen === "draw" ? (
           <DrawScreen
-            prize={view.currentPrize}
+            prize={drawPrize}
             names={namesForTicker}
             rolling={rolling}
             settleName={settleName}
@@ -272,7 +287,7 @@ export function PublicStage() {
         visible={view.session.controlBarVisible}
         screen={screen}
         prizes={prizeOptions}
-        currentPrizeId={view.session.currentPrizeId}
+        currentPrizeId={visiblePrizeId}
         drawing={holding || (rolling && settleName !== null)}
         waitingForStop={rolling && settleName === null}
         onToggleVisible={() => {
