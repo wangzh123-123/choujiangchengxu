@@ -122,7 +122,7 @@ export function PublicStage() {
       setError(err);
       return;
     }
-    const snapshot = view.participants.map((p) => p.name);
+    const snapshot = view.eligible.map((p) => p.name);
     try {
       rollingRef.current = true;
       settleNameRef.current = null;

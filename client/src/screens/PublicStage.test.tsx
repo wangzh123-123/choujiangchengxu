@@ -22,6 +22,8 @@ vi.mock("../api/client", () => ({
 
 vi.mock("./DrawScreen", () => ({
   DrawScreen: function MockDrawScreen({
+    prize,
+    names,
     settleName,
     onSettled,
   }: ComponentProps<typeof import("./DrawScreen").DrawScreen>) {
@@ -35,7 +37,13 @@ vi.mock("./DrawScreen", () => ({
         fired.current = false;
       }
     }, [settleName, onSettled]);
-    return <div data-testid="draw-screen">{settleName ?? "rolling"}</div>;
+    return (
+      <div data-testid="draw-screen">
+        <span data-testid="draw-prize">{prize?.name ?? ""}</span>
+        <span data-testid="draw-names">{(names ?? []).join(",")}</span>
+        {settleName ?? "rolling"}
+      </div>
+    );
   },
 }));
 
@@ -324,5 +332,26 @@ describe("PublicStage draw start/stop", () => {
     expect(screen.getByText("获得 三等奖")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("p2");
     expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
+  });
+
+  it("rolls only eligible names, not previous winners", async () => {
+    await renderStage(
+      drawView({
+        winners: [{ prizeId: "p1", participantId: "u1", at: "t" }],
+        eligible: [
+          { id: "u2", name: "乙" },
+          { id: "u3", name: "丙" },
+        ],
+      }),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("draw-names").textContent).toBe("乙,丙");
+    expect(screen.getByTestId("draw-names").textContent).not.toContain("甲");
   });
 });
