@@ -1,3 +1,26 @@
+import type { PublicScreen } from "../api/types";
+
+export function canStartRollFromScreen(opts: {
+  screen: PublicScreen;
+  currentPrizeId: string | null;
+  winnerPrizeId: string | null;
+  prizeComplete: boolean;
+}): boolean {
+  if (!opts.currentPrizeId || opts.prizeComplete) {
+    return false;
+  }
+  if (opts.screen === "enroll") {
+    return false;
+  }
+  if (opts.screen === "prize" || opts.screen === "draw") {
+    return true;
+  }
+  if (opts.screen === "winner") {
+    return opts.winnerPrizeId === opts.currentPrizeId;
+  }
+  return false;
+}
+
 export function startRollError(opts: {
   currentPrizeId: string | null;
   prizeComplete: boolean;
