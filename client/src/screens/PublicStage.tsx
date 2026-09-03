@@ -13,7 +13,7 @@ import { DrawScreen } from "./DrawScreen";
 import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
-import { afterHoldAction, isComplete, startRollError } from "./drawFlow";
+import { afterHoldAction, canStartRollFromScreen, isComplete, startRollError } from "./drawFlow";
 import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
 import { shouldIgnoreScreenNav } from "./screenNav";
 import { winnerScreenPrizeId } from "./winnerDisplay";
@@ -106,18 +106,31 @@ export function PublicStage() {
     if (!view || rollingRef.current || holdingRef.current) {
       return;
     }
-    if (view.session.publicScreen !== "draw") {
+    const prizeId = view.session.currentPrizeId;
+    const drawnCount = view.winners.filter((w) => w.prizeId === prizeId).length;
+    const prizeComplete = isComplete(drawnCount, view.currentPrize?.quantity ?? 1);
+    const startWinnerPrizeId = winnerScreenPrizeId({
+      currentPrizeId: prizeId,
+      lastWinnerPrizeId: view.session.lastWinnerPrizeId,
+      currentPrizeComplete: prizeComplete,
+    });
+    if (
+      !canStartRollFromScreen({
+        screen: view.session.publicScreen,
+        currentPrizeId: prizeId,
+        winnerPrizeId: startWinnerPrizeId,
+        prizeComplete,
+      })
+    ) {
       return;
     }
     skipRevealRef.current = false;
     stoppingRef.current = false;
     clearHold();
     setError(null);
-    const prizeId = view.session.currentPrizeId;
-    const drawnCount = view.winners.filter((w) => w.prizeId === prizeId).length;
     const err = startRollError({
       currentPrizeId: prizeId,
-      prizeComplete: isComplete(drawnCount, view.currentPrize?.quantity ?? 1),
+      prizeComplete,
       canDraw: view.canDraw,
     });
     if (err) {

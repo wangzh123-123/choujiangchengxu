@@ -254,8 +254,86 @@ describe("PublicStage draw start/stop", () => {
     expect(patchedScreens()).not.toContain("draw");
   });
 
-  it("does not start rolling from the prize screen", async () => {
+  it("starts rolling from the prize screen without calling startDraw", async () => {
     await renderStage(makeView());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).not.toHaveBeenCalled();
+    expect(patchSession).toHaveBeenCalledWith({ publicScreen: "draw", drawPhase: "rolling" });
+    expect(screen.getByTestId("draw-screen")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "停" })).toBeInTheDocument();
+  });
+
+  it("starts rolling from winner when the displayed prize is still the current prize", async () => {
+    await renderStage(
+      makeView({
+        session: {
+          currentPrizeId: "p1",
+          publicScreen: "winner",
+          controlBarVisible: true,
+          drawPhase: "idle",
+          lastWinnerParticipantId: "u1",
+          lastWinnerPrizeId: "p1",
+        },
+        lastWinner: { id: "u1", name: "甲" },
+        lastPrize: prize,
+        winners: [{ prizeId: "p1", participantId: "u1", at: "t" }],
+        eligible: [
+          { id: "u2", name: "乙" },
+          { id: "u3", name: "丙" },
+        ],
+      }),
+    );
+
+    expect(screen.getByRole("button", { name: "开始抽奖" })).toBeEnabled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).not.toHaveBeenCalled();
+    expect(patchSession).toHaveBeenCalledWith({ publicScreen: "draw", drawPhase: "rolling" });
+    expect(screen.getByTestId("draw-screen")).toBeInTheDocument();
+  });
+
+  it("does not start rolling from winner after the current prize auto-advanced", async () => {
+    const nextPrize: Prize = {
+      id: "p2",
+      name: "二等奖",
+      imagePath: "y.png",
+      order: 1,
+      quantity: 1,
+    };
+    const view = makeView({
+      session: {
+        currentPrizeId: "p2",
+        publicScreen: "winner",
+        controlBarVisible: true,
+        drawPhase: "idle",
+        lastWinnerParticipantId: "u1",
+        lastWinnerPrizeId: "p1",
+      },
+      currentPrize: nextPrize,
+      lastWinner: { id: "u1", name: "甲" },
+      lastPrize: prize,
+      winners: [{ prizeId: "p1", participantId: "u1", at: "t" }],
+    });
+    vi.mocked(fetchPublicView).mockResolvedValue(view);
+    vi.mocked(fetchPrizes).mockResolvedValue([prize, nextPrize]);
+    vi.mocked(patchSession).mockResolvedValue(view.session);
+    vi.mocked(setCurrentPrize).mockResolvedValue(view.session);
+    vi.mocked(startDraw).mockResolvedValue(incompleteDraw);
+    render(<PublicStage />);
+    await flush();
+
+    expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -263,7 +341,7 @@ describe("PublicStage draw start/stop", () => {
     });
 
     expect(startDraw).not.toHaveBeenCalled();
-    expect(patchedScreens()).not.toContain("draw");
+    expect(patchSession).not.toHaveBeenCalledWith({ publicScreen: "draw", drawPhase: "rolling" });
     expect(screen.queryByTestId("draw-screen")).not.toBeInTheDocument();
   });
 
