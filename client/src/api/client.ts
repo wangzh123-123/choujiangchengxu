@@ -63,8 +63,12 @@ export async function deleteParticipant(id: string): Promise<void> {
   await parseJson(res);
 }
 
-export async function startDraw(): Promise<DrawResult> {
-  const res = await fetch("/api/draw", { method: "POST" });
+export async function startDraw(participantId: string): Promise<DrawResult> {
+  const res = await fetch("/api/draw", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ participantId }),
+  });
   return parseJson<DrawResult>(res);
 }
 

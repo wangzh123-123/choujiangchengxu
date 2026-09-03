@@ -6,7 +6,7 @@ import {
   setCurrentPrize,
   startDraw,
 } from "../api/client";
-import type { DrawResult, Prize, PublicScreen, PublicView } from "../api/types";
+import type { Participant, Prize, PublicScreen, PublicView } from "../api/types";
 import { HostControlBar } from "../components/HostControlBar";
 import { startSettleHold } from "../components/settleHold";
 import { DrawScreen } from "./DrawScreen";
@@ -14,9 +14,10 @@ import { EnrollScreen } from "./EnrollScreen";
 import { PrizeScreen } from "./PrizeScreen";
 import { WinnerScreen } from "./WinnerScreen";
 import { afterHoldAction, canStartRollFromScreen, isComplete, startRollError } from "./drawFlow";
-import { buildWinnerHistory, winnersForPrize } from "./winnerHistory";
+import { buildWinnerHistory } from "./winnerHistory";
 import { shouldIgnoreScreenNav } from "./screenNav";
 import { winnerScreenPrizeId } from "./winnerDisplay";
+import { type CommittedDraw, displayWinnerPrizeId, winnersForPrizeWithCommit } from "./committedDraw";
 
 export function PublicStage() {
   const [view, setView] = useState<PublicView | null>(null);
@@ -27,12 +28,15 @@ export function PublicStage() {
   const [fadeKey, setFadeKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [holding, setHolding] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [committedDraw, setCommittedDraw] = useState<CommittedDraw | null>(null);
   const rollingRef = useRef(false);
   const holdingRef = useRef(false);
   const skipRevealRef = useRef(false);
   const prizeCompleteRef = useRef(false);
   const settleNameRef = useRef<string | null>(null);
   const stoppingRef = useRef(false);
+  const snapshotRef = useRef<Participant[]>([]);
   const cancelHoldRef = useRef<(() => void) | null>(null);
   const displayPrizeIdRef = useRef<string | null>(null);
 
@@ -81,6 +85,8 @@ export function PublicStage() {
       skipRevealRef.current = true;
       rollingRef.current = false;
       setRolling(false);
+      stoppingRef.current = false;
+      setStopping(false);
       clearHold();
       displayPrizeIdRef.current = null;
     }
@@ -93,6 +99,7 @@ export function PublicStage() {
     if (rollingRef.current || holdingRef.current || !view) {
       return;
     }
+    setCommittedDraw(null);
     const selected = prizes.find((p) => p.id === prizeId);
     const drawnCount = view.winners.filter((w) => w.prizeId === prizeId).length;
     const complete = isComplete(drawnCount, selected?.quantity ?? 1);
@@ -125,7 +132,6 @@ export function PublicStage() {
       return;
     }
     skipRevealRef.current = false;
-    stoppingRef.current = false;
     clearHold();
     setError(null);
     const err = startRollError({
@@ -137,15 +143,22 @@ export function PublicStage() {
       setError(err);
       return;
     }
+    if (view.eligible.length === 0) {
+      setError("没有可抽奖用户");
+      return;
+    }
+    setCommittedDraw(null);
+    snapshotRef.current = view.eligible.slice();
+    stoppingRef.current = false;
+    setStopping(false);
     displayPrizeIdRef.current = prizeId;
-    const snapshot = view.eligible.map((p) => p.name);
     try {
       rollingRef.current = true;
       settleNameRef.current = null;
       prizeCompleteRef.current = false;
       setRolling(true);
       setSettleName(null);
-      setTickerNames(snapshot);
+      setTickerNames(snapshotRef.current.map((p) => p.name));
       await patchSession({ publicScreen: "draw", drawPhase: "rolling" });
       setFadeKey((k) => k + 1);
       await refresh();
@@ -163,22 +176,60 @@ export function PublicStage() {
     }
   }
 
-  async function onStop() {
-    if (!rollingRef.current || settleNameRef.current !== null || stoppingRef.current) {
+  function onStop() {
+    if (!rollingRef.current || stoppingRef.current || settleNameRef.current !== null) {
       return;
     }
     stoppingRef.current = true;
+    setStopping(true);
+  }
+
+  async function onTickerSettled(index: number) {
+    if (skipRevealRef.current) {
+      return;
+    }
+    const snap = snapshotRef.current;
+    const person = snap.length > 0 ? snap[index % snap.length] : undefined;
+    if (!person) {
+      stoppingRef.current = false;
+      setStopping(false);
+      setError("没有可抽奖用户");
+      return;
+    }
     try {
-      const result: DrawResult = await startDraw();
-      setTickerNames((names) =>
-        names.includes(result.name) ? names : [...names, result.name],
-      );
+      const result = await startDraw(person.id);
+      setCommittedDraw({
+        prizeId: result.prizeId,
+        participantId: result.participantId,
+        name: result.name,
+      });
       prizeCompleteRef.current = result.prizeComplete;
       settleNameRef.current = result.name;
       setSettleName(result.name);
       await refresh();
+      rollingRef.current = false;
+      setRolling(false);
+      holdingRef.current = true;
+      setHolding(true);
+      cancelHoldRef.current?.();
+      cancelHoldRef.current = startSettleHold(() => {
+        cancelHoldRef.current = null;
+        if (afterHoldAction(prizeCompleteRef.current) === "winner") {
+          void (async () => {
+            await goScreen("winner", true);
+            displayPrizeIdRef.current = null;
+            holdingRef.current = false;
+            setHolding(false);
+          })();
+          return;
+        }
+        displayPrizeIdRef.current = null;
+        holdingRef.current = false;
+        setHolding(false);
+      });
     } catch (err) {
       stoppingRef.current = false;
+      setStopping(false);
       rollingRef.current = false;
       settleNameRef.current = null;
       setRolling(false);
@@ -189,32 +240,6 @@ export function PublicStage() {
       }
       await refresh();
     }
-  }
-
-  function onRollingSettled() {
-    if (skipRevealRef.current) {
-      return;
-    }
-    rollingRef.current = false;
-    setRolling(false);
-    holdingRef.current = true;
-    setHolding(true);
-    cancelHoldRef.current?.();
-    cancelHoldRef.current = startSettleHold(() => {
-      cancelHoldRef.current = null;
-      if (afterHoldAction(prizeCompleteRef.current) === "winner") {
-        void (async () => {
-          await goScreen("winner", true);
-          displayPrizeIdRef.current = null;
-          holdingRef.current = false;
-          setHolding(false);
-        })();
-        return;
-      }
-      displayPrizeIdRef.current = null;
-      holdingRef.current = false;
-      setHolding(false);
-    });
   }
 
   if (!view) {
@@ -245,7 +270,7 @@ export function PublicStage() {
   const currentDrawnCount = view.currentPrize
     ? view.winners.filter((w) => w.prizeId === view.currentPrize?.id).length
     : 0;
-  const winnerPrizeId = winnerScreenPrizeId({
+  const fallbackPrizeId = winnerScreenPrizeId({
     currentPrizeId: view.session.currentPrizeId,
     lastWinnerPrizeId: view.session.lastWinnerPrizeId,
     currentPrizeComplete: isComplete(
@@ -253,6 +278,7 @@ export function PublicStage() {
       view.currentPrize?.quantity ?? 1,
     ),
   });
+  const winnerPrizeId = displayWinnerPrizeId(committedDraw, fallbackPrizeId);
   const displayPrize =
     prizes.find((p) => p.id === winnerPrizeId) ??
     (view.currentPrize?.id === winnerPrizeId ? view.currentPrize : null) ??
@@ -283,19 +309,18 @@ export function PublicStage() {
             prize={drawPrize}
             names={namesForTicker}
             rolling={rolling}
-            stopping={settleName !== null}
-            onSettled={() => {
-              void onRollingSettled();
-            }}
+            stopping={stopping}
+            onSettled={onTickerSettled}
           />
         ) : null}
         {screen === "winner" ? (
           <WinnerScreen
             prize={displayPrize}
-            winners={winnersForPrize(
+            winners={winnersForPrizeWithCommit(
               view.winners,
               winnerPrizeId,
               view.participants,
+              committedDraw,
             )}
             history={buildWinnerHistory(view.winners, prizes, view.participants)}
           />
@@ -308,8 +333,8 @@ export function PublicStage() {
         prizes={prizeOptions}
         currentPrizeId={visiblePrizeId}
         winnerPrizeId={winnerPrizeId}
-        drawing={holding || (rolling && settleName !== null)}
-        waitingForStop={rolling && settleName === null}
+        drawing={holding || (rolling && stopping)}
+        waitingForStop={rolling && !stopping}
         onToggleVisible={() => {
           void patchSession({ controlBarVisible: !view.session.controlBarVisible }).then(refresh);
         }}

@@ -9,6 +9,7 @@ import {
   setCurrentPrize,
   startDraw,
 } from "../api/client";
+import { ROLL_MS } from "../components/NameTicker";
 import { PublicStage } from "./PublicStage";
 
 vi.mock("../api/client", () => ({
@@ -31,7 +32,9 @@ vi.mock("./DrawScreen", () => ({
     useEffect(() => {
       if (stopping && !fired.current) {
         fired.current = true;
-        onSettled?.(0);
+        window.setTimeout(() => {
+          onSettled?.(0);
+        }, ROLL_MS);
       }
       if (!stopping) {
         fired.current = false;
@@ -170,7 +173,15 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
     });
 
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+    });
+
     expect(startDraw).toHaveBeenCalledTimes(1);
+    expect(startDraw).toHaveBeenCalledWith("u1");
 
     await act(async () => {
       vi.advanceTimersByTime(3000);
@@ -197,7 +208,15 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
     });
 
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+    });
+
     expect(startDraw).toHaveBeenCalledTimes(1);
+    expect(startDraw).toHaveBeenCalledWith("u1");
 
     await act(async () => {
       vi.advanceTimersByTime(3000);
@@ -230,6 +249,22 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
     });
 
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledTimes(1);
+    expect(startDraw).toHaveBeenCalledWith("u1");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "抽奖中…" }));
+      await Promise.resolve();
+    });
+
     expect(startDraw).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -243,6 +278,19 @@ describe("PublicStage draw start/stop", () => {
 
   it("shows 没有可抽奖用户 when canDraw is false and does not patch to draw", async () => {
     await renderStage(drawView({ canDraw: false }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("没有可抽奖用户")).toBeInTheDocument();
+    expect(startDraw).not.toHaveBeenCalled();
+    expect(patchedScreens()).not.toContain("draw");
+  });
+
+  it("shows 没有可抽奖用户 when eligible is empty even if canDraw is true", async () => {
+    await renderStage(drawView({ eligible: [], canDraw: true }));
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
@@ -391,6 +439,15 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
     });
 
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledWith("u1");
     expect(screen.getByRole("combobox")).toHaveValue("p1");
     expect(screen.getByTestId("draw-prize").textContent).toBe("三等奖");
     expect(screen.getByTestId("draw-screen").textContent).toContain("甲");
@@ -458,6 +515,16 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledWith("u1");
 
     await act(async () => {
       vi.advanceTimersByTime(3000);
@@ -537,6 +604,16 @@ describe("PublicStage draw start/stop", () => {
       await Promise.resolve();
     });
 
+    expect(startDraw).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledWith("u1");
+
     await act(async () => {
       vi.advanceTimersByTime(3000);
       await Promise.resolve();
@@ -548,6 +625,48 @@ describe("PublicStage draw start/stop", () => {
     expect(screen.getByText("获得 三等奖")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("p2");
     expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
+  });
+
+  it("shows the committed winner on winner screen if public view lists someone else", async () => {
+    await renderStage(drawView({ currentPrize: { ...prize, quantity: 1 } }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    vi.mocked(startDraw).mockResolvedValue({
+      ...completeDraw,
+      quantity: 1,
+      drawnCount: 1,
+      name: "甲",
+      participantId: "u1",
+    });
+    const stale = drawView({
+      session: {
+        currentPrizeId: "p1",
+        publicScreen: "winner",
+        controlBarVisible: true,
+        drawPhase: "revealed",
+        lastWinnerParticipantId: "u2",
+        lastWinnerPrizeId: "p1",
+      },
+      winners: [{ prizeId: "p1", participantId: "u2", at: "t" }],
+      lastWinner: { id: "u2", name: "乙" },
+    });
+    vi.mocked(fetchPublicView).mockResolvedValue(stale);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      await Promise.resolve();
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByText("甲")).toBeInTheDocument();
   });
 
   it("rolls only eligible names, not previous winners", async () => {
@@ -571,3 +690,4 @@ describe("PublicStage draw start/stop", () => {
     expect(screen.getByTestId("draw-names").textContent).not.toContain("甲");
   });
 });
+
