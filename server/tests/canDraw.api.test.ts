@@ -71,7 +71,7 @@ describe("public view canDraw", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [jia.id] });
     await request(app).put("/api/session/current-prize").send({ prizeId: "prize-other" });
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.status).toBe(200);
     expect(drawn.body.participantId).toBe(jia.id);
 
@@ -93,13 +93,13 @@ describe("public view canDraw", () => {
 
   it("canDraw is false when the current prize is complete", async () => {
     const token = await login();
-    await addNamed("甲");
+    const jia = await addNamed("甲");
     await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
       .send([{ id: "p1", name: "A", imagePath: "a.png", order: 0, quantity: 1 }]);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.status).toBe(200);
 
     const view = await request(app).get("/api/public/view");

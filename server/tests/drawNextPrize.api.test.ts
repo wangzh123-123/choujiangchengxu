@@ -54,12 +54,14 @@ describe("draw advances current prize when complete", () => {
   it("moves currentPrizeId to the next prize when this prize completes", async () => {
     const token = await login();
     await seedThreePrizes(token);
-    await addNamed("甲");
-    await addNamed("乙");
-    await addNamed("丙");
+    const jia = await addNamed("甲");
+    const yi = await addNamed("乙");
+    const bing = await addNamed("丙");
+    expect(yi.id).toBeTruthy();
+    expect(bing.id).toBeTruthy();
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
 
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.status).toBe(200);
     expect(drawn.body.prizeComplete).toBe(true);
     expect(drawn.body.prizeId).toBe("p1");
@@ -73,16 +75,17 @@ describe("draw advances current prize when complete", () => {
   it("skips an already complete next prize", async () => {
     const token = await login();
     await seedThreePrizes(token);
-    await addNamed("甲");
-    await addNamed("乙");
-    await addNamed("丙");
+    const jia = await addNamed("甲");
+    const yi = await addNamed("乙");
+    const bing = await addNamed("丙");
+    expect(bing.id).toBeTruthy();
     await request(app).put("/api/session/current-prize").send({ prizeId: "p2" });
-    const first = await request(app).post("/api/draw");
+    const first = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(first.status).toBe(200);
     expect(first.body.prizeId).toBe("p2");
 
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const second = await request(app).post("/api/draw");
+    const second = await request(app).post("/api/draw").send({ participantId: yi.id });
     expect(second.status).toBe(200);
     expect(second.body.prizeId).toBe("p1");
     expect(second.body.currentPrizeId).toBe("p3");
@@ -94,11 +97,13 @@ describe("draw advances current prize when complete", () => {
   it("keeps currentPrizeId when the last prize completes", async () => {
     const token = await login();
     await seedThreePrizes(token);
-    await addNamed("甲");
-    await addNamed("乙");
-    await addNamed("丙");
+    const jia = await addNamed("甲");
+    const yi = await addNamed("乙");
+    const bing = await addNamed("丙");
+    expect(yi.id).toBeTruthy();
+    expect(bing.id).toBeTruthy();
     await request(app).put("/api/session/current-prize").send({ prizeId: "p3" });
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.status).toBe(200);
     expect(drawn.body.prizeComplete).toBe(true);
     expect(drawn.body.currentPrizeId).toBe("p3");
@@ -115,11 +120,13 @@ describe("draw advances current prize when complete", () => {
         { id: "p1", name: "一", imagePath: "a.png", order: 0, quantity: 3 },
         { id: "p2", name: "二", imagePath: "b.png", order: 1, quantity: 1 },
       ]);
-    await addNamed("甲");
-    await addNamed("乙");
-    await addNamed("丙");
+    const jia = await addNamed("甲");
+    const yi = await addNamed("乙");
+    const bing = await addNamed("丙");
+    expect(yi.id).toBeTruthy();
+    expect(bing.id).toBeTruthy();
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.status).toBe(200);
     expect(drawn.body.prizeComplete).toBe(false);
     expect(drawn.body.currentPrizeId).toBe("p1");
@@ -130,10 +137,11 @@ describe("draw advances current prize when complete", () => {
   it("does not auto-advance when selecting a completed prize", async () => {
     const token = await login();
     await seedThreePrizes(token);
-    await addNamed("甲");
-    await addNamed("乙");
+    const jia = await addNamed("甲");
+    const yi = await addNamed("乙");
+    expect(yi.id).toBeTruthy();
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const drawn = await request(app).post("/api/draw");
+    const drawn = await request(app).post("/api/draw").send({ participantId: jia.id });
     expect(drawn.body.currentPrizeId).toBe("p2");
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
     const session = await request(app).get("/api/session");

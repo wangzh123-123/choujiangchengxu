@@ -94,19 +94,19 @@ describe("Wave2 APIs", () => {
       .put("/api/presets/p0")
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [u1.id] });
-    const draw = await request(app).post("/api/draw");
+    const draw = await request(app).post("/api/draw").send({ participantId: u1.id });
     expect(draw.status).toBe(200);
     expect(draw.body.participantId).toBe(u1.id);
-    // Preset has highest priority: same person may be preset/drawn again.
     const preset = await request(app)
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [u1.id] });
     expect(preset.status).toBe(200);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const draw2 = await request(app).post("/api/draw");
+    const draw2 = await request(app).post("/api/draw").send({ participantId: u2.id });
     expect(draw2.status).toBe(200);
-    expect(draw2.body.participantId).toBe(u1.id);
+    expect(draw2.body.participantId).toBe(u2.id);
+    expect(draw2.body.name).toBe("乙");
   });
 
   it("rejects draw with empty eligible", async () => {
@@ -116,8 +116,9 @@ describe("Wave2 APIs", () => {
       .set("Authorization", `Bearer ${token}`)
       .send([{ id: "p1", name: "特等奖", imagePath: "a.png", order: 0, quantity: 1 }]);
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    const res = await request(app).post("/api/draw");
+    const res = await request(app).post("/api/draw").send({});
     expect(res.status).toBe(400);
+    expect(String(res.body.message)).toBe("未指定中奖人");
   });
 
   it("public view does not require admin", async () => {
@@ -145,13 +146,15 @@ describe("Wave2 APIs", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [u2.id] });
     await request(app).patch("/api/session").send({ publicScreen: "draw" });
-    const draw = await request(app).post("/api/draw");
+    const draw = await request(app).post("/api/draw").send({ participantId: u1.id });
     expect(draw.status).toBe(200);
-    expect(draw.body.participantId).toBe(u2.id);
-    expect(draw.body.name).toBe("乙");
+    expect(draw.body.participantId).toBe(u1.id);
+    expect(draw.body.name).toBe("甲");
+    expect(draw.body.participantId).not.toBe(u2.id);
+    expect(draw.body.name).not.toBe("乙");
     const session = await request(app).get("/api/session");
     expect(session.body.publicScreen).toBe("draw");
-    expect(session.body.lastWinnerParticipantId).toBe(u2.id);
+    expect(session.body.lastWinnerParticipantId).toBe(u1.id);
   });
 
   it("clears participants and winners with admin auth", async () => {
@@ -166,7 +169,7 @@ describe("Wave2 APIs", () => {
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [u1.id] });
-    await request(app).post("/api/draw");
+    await request(app).post("/api/draw").send({ participantId: u1.id });
 
     const clearWinners = await request(app)
       .delete("/api/winners")

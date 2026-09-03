@@ -1,9 +1,6 @@
-import { randomInt } from "node:crypto";
 import { Router } from "express";
-import { resolveWinner } from "../domain/draw.js";
 import { listEligible } from "../domain/eligibility.js";
 import { nextIncompletePrizeId } from "../domain/nextPrize.js";
-import { normalizePresetSlots, presetSlotAt } from "../domain/presetSlots.js";
 import { drawnCountForPrize, isPrizeComplete, prizeQuantity } from "../domain/prizeQuantity.js";
 import type { AppStores } from "../store/appStores.js";
 import type { WinnerRecord } from "../types.js";
@@ -11,7 +8,7 @@ import type { WinnerRecord } from "../types.js";
 export function drawRouter(stores: AppStores): Router {
   const router = Router();
 
-  router.post("/api/draw", async (_req, res) => {
+  router.post("/api/draw", async (req, res) => {
     const session = await stores.session.read();
     if (!session.currentPrizeId) {
       res.status(400).json({ message: "未选择当前奖品，无法开奖" });
@@ -31,40 +28,21 @@ export function drawRouter(stores: AppStores): Router {
       res.status(400).json({ message: "该奖品已抽完" });
       return;
     }
-    const participants = await stores.participants.read();
-    const presets = await stores.presets.read();
-    const slots = normalizePresetSlots(presets[prizeId], quantity);
-    const presetId = presetSlotAt(slots, drawnCountBefore);
-    const eligible = listEligible(participants, winners);
-
-    let winnerId: string;
-    if (presetId) {
-      // Preset has highest priority: ignore repeat-winner eligibility.
-      winnerId = resolveWinner({
-        presetId,
-        eligibleIds: eligible.map((e) => e.id),
-        random: () => 0,
-      });
-    } else {
-      if (eligible.length === 0) {
-        res.status(400).json({ message: "没有可抽奖用户" });
-        return;
-      }
-      try {
-        winnerId = resolveWinner({
-          presetId: null,
-          eligibleIds: eligible.map((e) => e.id),
-          random: () => randomInt(0, 1_000_000) / 1_000_000,
-        });
-      } catch {
-        res.status(400).json({ message: "开奖失败" });
-        return;
-      }
+    const participantId =
+      typeof req.body?.participantId === "string" ? req.body.participantId.trim() : "";
+    if (!participantId) {
+      res.status(400).json({ message: "未指定中奖人" });
+      return;
     }
-
-    const winner = participants.find((e) => e.id === winnerId);
+    const participants = await stores.participants.read();
+    const winner = participants.find((e) => e.id === participantId);
     if (!winner) {
       res.status(400).json({ message: "开奖失败" });
+      return;
+    }
+    const eligible = listEligible(participants, winners);
+    if (!eligible.some((e) => e.id === participantId)) {
+      res.status(400).json({ message: "该用户不可抽奖" });
       return;
     }
     const record: WinnerRecord = {

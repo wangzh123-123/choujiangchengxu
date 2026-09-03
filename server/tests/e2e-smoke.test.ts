@@ -44,9 +44,10 @@ describe("e2e-smoke", () => {
       .put("/api/presets/p1")
       .set("Authorization", `Bearer ${token}`)
       .send({ slots: [u2.body.id] });
-    const draw = await request(app).post("/api/draw");
+    const draw = await request(app).post("/api/draw").send({ participantId: u1.body.id });
     expect(draw.status).toBe(200);
-    expect(draw.body.participantId).toBe(u2.body.id);
-    expect(draw.body.name).toBe("乙");
+    expect(draw.body.participantId).toBe(u1.body.id);
+    expect(draw.body.participantId).not.toBe(u2.body.id);
+    expect(draw.body.name).toBe("甲");
   });
 });

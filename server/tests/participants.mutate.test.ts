@@ -104,7 +104,7 @@ describe("participant mutate APIs", () => {
     const a = await request(app).post("/api/participants").send({ name: "甲" });
     await request(app).post("/api/participants").send({ name: "乙" });
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    await request(app).post("/api/draw");
+    await request(app).post("/api/draw").send({ participantId: a.body.id });
     const res = await request(app).patch(`/api/participants/${a.body.id}`).send({ name: "甲新" });
     expect(res.status).toBe(200);
     expect(res.body.name).toBe("甲新");
@@ -138,7 +138,7 @@ describe("participant mutate APIs", () => {
     const a = await request(app).post("/api/participants").send({ name: "甲" });
     await request(app).post("/api/participants").send({ name: "乙" });
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    await request(app).post("/api/draw");
+    await request(app).post("/api/draw").send({ participantId: a.body.id });
     const winnerId = (await request(app).get("/api/public/view")).body.lastWinner.id as string;
     const res = await request(app).delete(`/api/participants/${winnerId}`);
     expect(res.status).toBe(409);

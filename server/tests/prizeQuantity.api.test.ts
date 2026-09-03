@@ -71,11 +71,15 @@ describe("prize quantity API", () => {
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)
       .send([{ id: "p1", name: "A", imagePath: "a.png", order: 0, quantity: 2 }]);
-    await request(app).post("/api/participants").send({ name: "甲" });
-    await request(app).post("/api/participants").send({ name: "乙" });
+    const jia = await request(app).post("/api/participants").send({ name: "甲" });
+    const yi = await request(app).post("/api/participants").send({ name: "乙" });
     await request(app).put("/api/session/current-prize").send({ prizeId: "p1" });
-    expect((await request(app).post("/api/draw")).status).toBe(200);
-    expect((await request(app).post("/api/draw")).status).toBe(200);
+    expect(
+      (await request(app).post("/api/draw").send({ participantId: jia.body.id })).status,
+    ).toBe(200);
+    expect((await request(app).post("/api/draw").send({ participantId: yi.body.id })).status).toBe(
+      200,
+    );
     const res = await request(app)
       .put("/api/prizes")
       .set("Authorization", `Bearer ${token}`)

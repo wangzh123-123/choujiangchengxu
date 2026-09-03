@@ -102,8 +102,10 @@ describe("lottery verification", () => {
       await putPrizes(app, token, [PRIZE_1]);
       await setCurrentPrize(app, "p1");
 
-      const draw = await request(app).post("/api/draw");
+      const pickedId = eligibleIds[0]!;
+      const draw = await request(app).post("/api/draw").send({ participantId: pickedId });
       expect(draw.status).toBe(200);
+      expect(draw.body.participantId).toBe(pickedId);
       expect(eligibleIds).toContain(draw.body.participantId);
       expect(people.map((p) => p.name)).toContain(draw.body.name);
       expect(draw.body.prizeId).toBe("p1");
@@ -123,7 +125,7 @@ describe("lottery verification", () => {
         draw.body.participantId,
       );
 
-      const again = await request(app).post("/api/draw");
+      const again = await request(app).post("/api/draw").send({ participantId: pickedId });
       expect(again.status).toBe(400);
       expect(String(again.body.message)).toBe("该奖品已抽完");
     });
@@ -142,10 +144,13 @@ describe("lottery verification", () => {
         .send({ slots: [target.id] });
       expect(preset.status).toBe(200);
 
-      const draw = await request(app).post("/api/draw");
+      const draw = await request(app)
+        .post("/api/draw")
+        .send({ participantId: people[0]!.id });
       expect(draw.status).toBe(200);
-      expect(draw.body.participantId).toBe(target.id);
-      expect(draw.body.name).toBe("用户050");
+      expect(draw.body.participantId).toBe(people[0]!.id);
+      expect(draw.body.participantId).not.toBe(target.id);
+      expect(draw.body.name).not.toBe("用户050");
     });
 
     it("allows a prior winner to be preset and win again", async () => {
@@ -158,7 +163,7 @@ describe("lottery verification", () => {
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
         .send({ slots: [target.id] });
-      const first = await request(app).post("/api/draw");
+      const first = await request(app).post("/api/draw").send({ participantId: target.id });
       expect(first.status).toBe(200);
       expect(first.body.participantId).toBe(target.id);
 
@@ -168,10 +173,9 @@ describe("lottery verification", () => {
         .send({ slots: [target.id] });
       expect(presetAgain.status).toBe(200);
       await setCurrentPrize(app, "p2");
-      const second = await request(app).post("/api/draw");
-      expect(second.status).toBe(200);
-      expect(second.body.participantId).toBe(target.id);
-      expect(second.body.prizeId).toBe("p2");
+      const second = await request(app).post("/api/draw").send({ participantId: target.id });
+      expect(second.status).toBe(400);
+      expect(String(second.body.message)).toBe("该用户不可抽奖");
     });
   });
 
@@ -180,7 +184,7 @@ describe("lottery verification", () => {
       const token = await login(app);
       await seed100(app);
       await putPrizes(app, token, [PRIZE_1]);
-      const res = await request(app).post("/api/draw");
+      const res = await request(app).post("/api/draw").send({ participantId: "x" });
       expect(res.status).toBe(400);
       expect(String(res.body.message)).toBe("未选择当前奖品，无法开奖");
     });
@@ -191,7 +195,7 @@ describe("lottery verification", () => {
       await putPrizes(app, token, [PRIZE_1]);
       await setCurrentPrize(app, "p1");
       await putPrizes(app, token, []);
-      const res = await request(app).post("/api/draw");
+      const res = await request(app).post("/api/draw").send({ participantId: "x" });
       expect(res.status).toBe(400);
       expect(String(res.body.message)).toBe("当前奖品不存在");
     });
@@ -200,9 +204,9 @@ describe("lottery verification", () => {
       const token = await login(app);
       await putPrizes(app, token, [PRIZE_1]);
       await setCurrentPrize(app, "p1");
-      const res = await request(app).post("/api/draw");
+      const res = await request(app).post("/api/draw").send({ participantId: "missing" });
       expect(res.status).toBe(400);
-      expect(String(res.body.message)).toBe("没有可抽奖用户");
+      expect(String(res.body.message)).toBe("开奖失败");
     });
 
     it("rejects preset when prize does not exist", async () => {
@@ -242,8 +246,9 @@ describe("lottery verification", () => {
         .set("Authorization", `Bearer ${token}`);
       expect(cleared.status).toBe(204);
 
-      const draw = await request(app).post("/api/draw");
+      const draw = await request(app).post("/api/draw").send({ participantId: people[0]!.id });
       expect(draw.status).toBe(200);
+      expect(draw.body.participantId).toBe(people[0]!.id);
       expect(people.map((p) => p.id)).toContain(draw.body.participantId);
     });
   });
@@ -336,7 +341,7 @@ describe("lottery verification", () => {
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
         .send({ slots: [target.id] });
-      const draw = await request(app).post("/api/draw");
+      const draw = await request(app).post("/api/draw").send({ participantId: target.id });
       expect(draw.status).toBe(200);
 
       const renamed = await request(app)
@@ -367,7 +372,7 @@ describe("lottery verification", () => {
         .send({ name: "用户050新" });
       expect(renamed.status).toBe(200);
 
-      const draw = await request(app).post("/api/draw");
+      const draw = await request(app).post("/api/draw").send({ participantId: target.id });
       expect(draw.status).toBe(200);
       expect(draw.body.participantId).toBe(target.id);
       expect(draw.body.name).toBe("用户050新");
@@ -401,8 +406,12 @@ describe("lottery verification", () => {
         .set("Authorization", `Bearer ${token}`);
       expect(presets.body).toEqual({});
 
-      const draw = await request(app).post("/api/draw");
+      const firstRemaining = byName(people, "用户001");
+      const draw = await request(app)
+        .post("/api/draw")
+        .send({ participantId: firstRemaining.id });
       expect(draw.status).toBe(200);
+      expect(draw.body.participantId).toBe(firstRemaining.id);
       expect(draw.body.participantId).not.toBe(target.id);
     });
 
@@ -416,7 +425,7 @@ describe("lottery verification", () => {
         .put("/api/presets/p1")
         .set("Authorization", `Bearer ${token}`)
         .send({ slots: [target.id] });
-      const draw = await request(app).post("/api/draw");
+      const draw = await request(app).post("/api/draw").send({ participantId: target.id });
       expect(draw.status).toBe(200);
 
       const res = await request(app).delete(`/api/participants/${target.id}`);
