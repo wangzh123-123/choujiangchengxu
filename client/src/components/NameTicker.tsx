@@ -8,7 +8,7 @@ type Props = {
   onSettled?: () => void;
 };
 
-export const ROLL_MS = 800;
+export const ROLL_MS = 40;
 export const TICK_MS = 40;
 
 export function NameTicker({ names, rolling, settleName, onSettled }: Props) {

@@ -13,8 +13,8 @@ describe("NameTicker helpers", () => {
 });
 
 describe("NameTicker timing constants", () => {
-  it("settles 800ms after winner is known and ticks every 40ms", () => {
-    expect(ROLL_MS).toBe(800);
+  it("settles 40ms after winner is known and ticks every 40ms", () => {
+    expect(ROLL_MS).toBe(40);
     expect(TICK_MS).toBe(40);
   });
 });
