@@ -1,4 +1,5 @@
 import type { PublicScreen } from "../api/types";
+import { canStartRollFromScreen } from "../screens/drawFlow";
 import { prizeOptionLabel } from "../screens/prizeOptionLabel";
 
 type PrizeOption = { id: string; name: string; drawnCount: number; quantity: number };
@@ -8,6 +9,7 @@ type Props = {
   screen: PublicScreen;
   prizes: PrizeOption[];
   currentPrizeId: string | null;
+  winnerPrizeId: string | null;
   drawing: boolean;
   waitingForStop: boolean;
   onToggleVisible: () => void;
@@ -30,6 +32,7 @@ export function HostControlBar({
   screen,
   prizes,
   currentPrizeId,
+  winnerPrizeId,
   drawing,
   waitingForStop,
   onToggleVisible,
@@ -87,7 +90,13 @@ export function HostControlBar({
         className="primary"
         disabled={
           drawing ||
-          (!waitingForStop && (screen !== "draw" || complete || !currentPrizeId))
+          (!waitingForStop &&
+            !canStartRollFromScreen({
+              screen,
+              currentPrizeId,
+              winnerPrizeId,
+              prizeComplete: complete,
+            }))
         }
         onClick={() => {
           if (waitingForStop) onStop();

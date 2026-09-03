@@ -294,6 +294,7 @@ export function PublicStage() {
         screen={screen}
         prizes={prizeOptions}
         currentPrizeId={visiblePrizeId}
+        winnerPrizeId={winnerPrizeId}
         drawing={holding || (rolling && settleName !== null)}
         waitingForStop={rolling && settleName === null}
         onToggleVisible={() => {

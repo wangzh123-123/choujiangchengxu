@@ -11,6 +11,7 @@ function barProps(patch: Partial<ComponentProps<typeof HostControlBar>> = {}): C
     screen: "enroll",
     prizes: [],
     currentPrizeId: null,
+    winnerPrizeId: null,
     drawing: false,
     waitingForStop: false,
     onToggleVisible: noop,
@@ -84,9 +85,22 @@ describe("HostControlBar", () => {
     expect(screen.getByRole("button", { name: "抽奖中…" })).toBeDisabled();
   });
 
-  it("disables 开始抽奖 on enroll prize and winner even if the prize is incomplete", () => {
-    const prizes = [{ id: "p1", name: "一等奖", drawnCount: 0, quantity: 3 }];
-    for (const publicScreen of ["enroll", "prize", "winner"] as const) {
+  it("disables 开始抽奖 on enroll even if the prize is incomplete", () => {
+    render(
+      <HostControlBar
+        {...barProps({
+          screen: "enroll",
+          prizes: [{ id: "p1", name: "一等奖", drawnCount: 0, quantity: 3 }],
+          currentPrizeId: "p1",
+        })}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
+  });
+
+  it("enables 开始抽奖 on prize and draw when the prize is incomplete", () => {
+    const prizes = [{ id: "p1", name: "一等奖", drawnCount: 1, quantity: 3 }];
+    for (const publicScreen of ["prize", "draw"] as const) {
       const { unmount } = render(
         <HostControlBar
           {...barProps({
@@ -96,22 +110,40 @@ describe("HostControlBar", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "开始抽奖" })).toBeEnabled();
       unmount();
     }
   });
 
-  it("enables 开始抽奖 only on the draw screen when the prize is incomplete", () => {
+  it("enables 开始抽奖 on winner when the displayed prize is the current incomplete prize", () => {
     render(
       <HostControlBar
         {...barProps({
-          screen: "draw",
+          screen: "winner",
           prizes: [{ id: "p1", name: "一等奖", drawnCount: 1, quantity: 3 }],
           currentPrizeId: "p1",
+          winnerPrizeId: "p1",
         })}
       />,
     );
     expect(screen.getByRole("button", { name: "开始抽奖" })).toBeEnabled();
+  });
+
+  it("disables 开始抽奖 on winner when showing the previous prize after auto-advance", () => {
+    render(
+      <HostControlBar
+        {...barProps({
+          screen: "winner",
+          prizes: [
+            { id: "p1", name: "一等奖", drawnCount: 1, quantity: 1 },
+            { id: "p2", name: "二等奖", drawnCount: 0, quantity: 1 },
+          ],
+          currentPrizeId: "p2",
+          winnerPrizeId: "p1",
+        })}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "开始抽奖" })).toBeDisabled();
   });
 
   it("disables 已抽取 when the current prize is complete", () => {
