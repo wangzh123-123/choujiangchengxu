@@ -276,6 +276,55 @@ describe("PublicStage draw start/stop", () => {
     expect(startDraw).toHaveBeenCalledTimes(1);
   });
 
+  it("does not patch to winner after startDraw if host left draw mid-POST", async () => {
+    await renderStage(drawView());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "开始抽奖" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    let resolveDraw: (value: DrawResult) => void = () => undefined;
+    const pending = new Promise<DrawResult>((resolve) => {
+      resolveDraw = resolve;
+    });
+    vi.mocked(startDraw).mockReturnValue(pending);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "停" }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(ROLL_MS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(startDraw).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "奖品" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      resolveDraw(completeDraw);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(patchedScreens()).not.toContain("winner");
+  });
+
   it("shows 没有可抽奖用户 when canDraw is false and does not patch to draw", async () => {
     await renderStage(drawView({ canDraw: false }));
 

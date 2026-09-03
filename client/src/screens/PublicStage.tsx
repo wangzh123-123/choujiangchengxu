@@ -203,6 +203,9 @@ export function PublicStage() {
         participantId: result.participantId,
         name: result.name,
       });
+      if (skipRevealRef.current) {
+        return;
+      }
       prizeCompleteRef.current = result.prizeComplete;
       settleNameRef.current = result.name;
       setSettleName(result.name);

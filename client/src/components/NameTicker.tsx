@@ -23,6 +23,13 @@ export function NameTicker({ names, rolling, stopping, onSettled }: Props) {
   offsetRef.current = offset;
 
   useEffect(() => {
+    if (!rolling && !stopping) {
+      settledOnceRef.current = false;
+      setSettled(false);
+    }
+  }, [rolling, stopping]);
+
+  useEffect(() => {
     if (!rolling || cycle.length === 0) {
       return;
     }

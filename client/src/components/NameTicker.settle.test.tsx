@@ -39,4 +39,21 @@ describe("NameTicker settle delay", () => {
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(screen.getByText("乙")).toHaveClass("focus");
   });
+
+  it("drops settled when rolling and stopping both become false after settle", () => {
+    const { rerender } = render(
+      <NameTicker names={["甲", "乙", "丙"]} rolling stopping />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(ROLL_MS);
+    });
+    expect(document.querySelector(".ticker")).toHaveClass("settled");
+
+    rerender(<NameTicker names={["甲", "乙", "丙"]} rolling={false} stopping />);
+    expect(document.querySelector(".ticker")).toHaveClass("settled");
+
+    rerender(<NameTicker names={["甲", "乙", "丙"]} rolling={false} stopping={false} />);
+    expect(document.querySelector(".ticker")).not.toHaveClass("settled");
+  });
 });
