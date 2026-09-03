@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "prizeId": "prize-1784373676791",
+    "participantId": "a0d91173-52f5-4636-889a-301ae18e9243",
+    "at": "2026-09-03T07:07:25.234Z"
+  },
+  {
+    "prizeId": "prize-1784373676791",
+    "participantId": "238b6ae8-53f2-4c95-9ba8-4dd164088229",
+    "at": "2026-09-03T07:11:44.725Z"
+  },
+  {
+    "prizeId": "prize-1784373676791",
+    "participantId": "5cc69f90-b297-433a-aaaa-0244e14bb427",
+    "at": "2026-09-03T07:11:51.657Z"
+  },
+  {
+    "prizeId": "prize-1",
+    "participantId": "3d5e4962-0fb7-41a6-baa7-fc4237fbaa46",
+    "at": "2026-09-03T07:12:08.059Z"
+  },
+  {
+    "prizeId": "prize-2",
+    "participantId": "15004ae0-6a70-4735-9d04-c964b4d7f076",
+    "at": "2026-09-03T07:16:40.349Z"
+  },
+  {
+    "prizeId": "prize-2",
+    "participantId": "113cdb86-c5c0-4fb1-aa1e-3df5c5f65b6d",
+    "at": "2026-09-03T07:16:46.066Z"
+  }
+]

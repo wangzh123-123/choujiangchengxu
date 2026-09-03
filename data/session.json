@@ -1,8 +1,8 @@
 {
-  "currentPrizeId": "prize-1",
-  "publicScreen": "enroll",
+  "currentPrizeId": "prize-3",
+  "publicScreen": "winner",
   "controlBarVisible": true,
-  "drawPhase": "idle",
-  "lastWinnerParticipantId": null,
-  "lastWinnerPrizeId": null
+  "drawPhase": "revealed",
+  "lastWinnerParticipantId": "113cdb86-c5c0-4fb1-aa1e-3df5c5f65b6d",
+  "lastWinnerPrizeId": "prize-2"
 }

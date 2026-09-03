@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const ROLL_MS = 40;
-export const TICK_MS = 40;
+export const TICK_MS = 15;
 
 export function NameTicker({ names, rolling, stopping, onSettled }: Props) {
   const cycle = useMemo(() => buildCycle(names), [names]);
