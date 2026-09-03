@@ -283,7 +283,7 @@ export function PublicStage() {
             prize={drawPrize}
             names={namesForTicker}
             rolling={rolling}
-            settleName={settleName}
+            stopping={settleName !== null}
             onSettled={() => {
               void onRollingSettled();
             }}

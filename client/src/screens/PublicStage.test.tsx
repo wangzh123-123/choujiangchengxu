@@ -24,24 +24,24 @@ vi.mock("./DrawScreen", () => ({
   DrawScreen: function MockDrawScreen({
     prize,
     names,
-    settleName,
+    stopping,
     onSettled,
   }: ComponentProps<typeof import("./DrawScreen").DrawScreen>) {
     const fired = useRef(false);
     useEffect(() => {
-      if (settleName && !fired.current) {
+      if (stopping && !fired.current) {
         fired.current = true;
-        onSettled?.();
+        onSettled?.(0);
       }
-      if (!settleName) {
+      if (!stopping) {
         fired.current = false;
       }
-    }, [settleName, onSettled]);
+    }, [stopping, onSettled]);
     return (
       <div data-testid="draw-screen">
         <span data-testid="draw-prize">{prize?.name ?? ""}</span>
         <span data-testid="draw-names">{(names ?? []).join(",")}</span>
-        {settleName ?? "rolling"}
+        {stopping ? (names?.[0] ?? "rolling") : "rolling"}
       </div>
     );
   },

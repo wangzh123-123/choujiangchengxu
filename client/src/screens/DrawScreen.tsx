@@ -6,11 +6,11 @@ type Props = {
   prize: Prize | null;
   names: string[];
   rolling: boolean;
-  settleName: string | null;
-  onSettled?: () => void;
+  stopping: boolean;
+  onSettled?: (index: number) => void;
 };
 
-export function DrawScreen({ prize, names, rolling, settleName, onSettled }: Props) {
+export function DrawScreen({ prize, names, rolling, stopping, onSettled }: Props) {
   return (
     <section className="screen draw-screen">
       <p className="eyebrow">抽奖进行中</p>
@@ -23,7 +23,7 @@ export function DrawScreen({ prize, names, rolling, settleName, onSettled }: Pro
       <NameTicker
         names={names}
         rolling={rolling}
-        settleName={settleName}
+        stopping={stopping}
         onSettled={onSettled}
       />
     </section>
